@@ -14,6 +14,8 @@ import { UserPayloadInterface } from 'src/modules/auth/interface';
 import { ZodValidationPipe } from 'src/pipes/zodValidation.pipe';
 import { taskSchema } from './schema/create-task.zod.schema';
 import { CreateTaskBodyDto, CreateTaskParamDto } from './dto/create-task.dto';
+import { ChangeTaskPostionPipe } from './pipe/change-task-position.pipe';
+import { ChangeTaskPositionBodyDto, ChangeTaskPositionParamDto } from './dto/change-task-postion.dto';
 
 @Controller('task')
 export class TaskController {
@@ -35,4 +37,19 @@ export class TaskController {
   }
 
 
+  @Patch(':stage_id/:task_id')
+  @UseGuards(UserAuthGuard)
+  async changeStage(
+    @Req() req: Request,
+    @Param() changeStageParam: ChangeTaskPositionParamDto,
+    @Body(new ChangeTaskPostionPipe()) {new_position, new_stage_id}: ChangeTaskPositionBodyDto,
+  ) {
+    const { user_id } = req.user as UserPayloadInterface;
+    return this.taskService.changePosition({
+      user_id,
+      ...changeStageParam,
+      new_stage_id,
+      new_position
+    });
+  }
 }
