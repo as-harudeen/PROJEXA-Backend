@@ -24,12 +24,14 @@ export class MailService {
 
   /**
    * The method for genarate and send OTP via email.
-   * @param to - holds the recipient's email address
+   * @param to - holds the recipient's email address.
+   * @returns - 6 digit of OTP.
    */
   async sendOTP(to: string) {
     const OTP = generateOTP(6);
     const text = `Your OTP is ${OTP}`;
     const subject = 'One-Time-Password';
     await this.sendMail({ to, subject, text });
+    return OTP;
   }
 }

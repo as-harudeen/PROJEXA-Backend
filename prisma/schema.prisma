@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  user_name          String  @unique
+  user_email         String  @unique
+  password           String
+  user_profile       String?
+  bio                String?
+  is_blocked         Boolean @default(false)
+  two_factor_enabled Boolean @default(false)
+  createdAt DateTime @default(now())
+}

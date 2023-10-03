@@ -5,6 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { RegisterUserDto } from '../user/dto/register-user.dto';
+import { LoginUerDto } from '../user/dto/login-user.dto';
 
 @Injectable()
 export class OtpService {
@@ -15,7 +16,7 @@ export class OtpService {
     private readonly authService: AuthService,
   ) {}
 
-  async generateAndMailRegisterOTP (user_email: string) {
+  async generateAndMailOTP (user_email: string) {
     const OTP = await this.mailService.sendOTP(user_email);
     this.redisService.setItem(`${user_email}-OTP`, OTP);
     return "OTP Sended successfully";
@@ -31,7 +32,7 @@ export class OtpService {
     try {
       const { user_email, user_name } = registerUserDto;
       await this.userService.isExist(user_name, user_email);
-      await this.generateAndMailRegisterOTP(user_email);
+      await this.generateAndMailOTP(user_email);
       res.cookie(
         'registerToken',
         await this.authService.generateRegisterToken(registerUserDto),
@@ -49,4 +50,11 @@ export class OtpService {
   }
 
 
+  async login (res: Response, loginUserDto: LoginUerDto) {
+    const { two_factor_enabled } = await this.userService.login(res, loginUserDto);
+    if(!two_factor_enabled) return "Login successfylly";
+    await this.generateAndMailOTP(loginUserDto.user_email);
+    res.status(201);
+    return "OTP Send successfully";
+  }
 }

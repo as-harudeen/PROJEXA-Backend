@@ -1,14 +1,18 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { MailService } from '../mail/mail.service';
+import { LoginUerDto } from './dto/login-user.dto';
+import { AuthService } from '../auth/auth.service';
+import { Response } from 'express';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailService: MailService,
+    private readonly authService: AuthService,
   ) {}
 
   /**
@@ -21,6 +25,7 @@ export class UserService {
    */
   async isExist(user_name: string, user_email: string) {
     try {
+      console.log(user_name, user_email);
       const user = await this.prisma.user.findFirst({
         where: { OR: [{ user_email }, { user_name }] },
       });
@@ -39,17 +44,32 @@ export class UserService {
    * @throws - BadRequestException -
    *           if create user on database get fail.
    */
-  async register({ password, ...registerUserDto }: RegisterUserDto) {
+  async register({ user_email, user_name, password }: RegisterUserDto) {
     try {
-      this.mailService.sendOTP(registerUserDto.user_email);
-      const hashedPassword = await bcrypt.hash(password, 10);
       await this.prisma.user.create({
         data: {
-          ...registerUserDto,
-          password: hashedPassword,
+          user_email,
+          user_name,
+          password,
         },
       });
       return 'User registered successfully';
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async login(res: Response, loginUserDto: LoginUerDto) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { user_email: loginUserDto.user_email },
+      });
+      if (user == null) throw new Error('Incorrect email or password');
+      const token = await this.authService.login(user, loginUserDto.password);
+      res.cookie('token', token);
+      return {
+        two_factor_enabled: user.two_factor_enabled
+      }
     } catch (err) {
       throw new BadRequestException(err.message);
     }

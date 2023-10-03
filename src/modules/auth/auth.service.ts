@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { UserEntity } from '../user/entity/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -26,5 +27,19 @@ export class AuthService {
       user_email,
       password: hashedPassword,
     });
+  }
+
+  async login (user: UserEntity, password: string  ) {
+    try {
+        if(! await bcrypt.compare(password, user.password)) {
+            throw new Error("Incorrect email or password");
+        }
+        return await this.jwtService.signAsync({
+            user_id: user.user_id,
+            user_email: user.user_email
+        })
+    } catch (err) {
+        throw new BadRequestException(err.message);
+    }
   }
 }

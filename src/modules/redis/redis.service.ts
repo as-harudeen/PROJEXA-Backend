@@ -11,7 +11,7 @@ export class RedisService {
         this.cacheManager.set(key, item);
     }
 
-    getItem(key:string) {
-        this.cacheManager.get(key);
+    async getItem(key:string) {
+        return await this.cacheManager.get(key);
     }
 }
