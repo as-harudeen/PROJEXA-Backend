@@ -6,15 +6,15 @@ import { UserModule } from '../user/user.module';
 import { OtpModule } from '../otp/otp.module';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { TwoAFStrategy } from './strategy/twoAF.strategy';
 
 @Module({
   imports: [PassportModule, JwtModule.register({
-    secret: process.env.SECRET,
     signOptions: {expiresIn: "1h"},
     global: true
   }), UserModule, OtpModule, PrismaModule],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, TwoAFStrategy],
   exports: [AuthService]
 })
 export class AuthModule {}

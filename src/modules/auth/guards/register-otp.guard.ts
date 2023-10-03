@@ -22,7 +22,7 @@ export class RegisterOTPGuard implements CanActivate {
       const claim = await this.jwtService.verifyAsync(
         request.cookies.registerToken,
         {
-          secret: process.env.SECRET,
+          secret: process.env.REGISTER_TOKEN_SECRET,
         },
       );
       if (!claim.user_email || !claim.user_name || !claim.password) {
