@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
-import { LoginUerDto } from 'src/modules/user/dto/login-user.dto';
+import { LoginUerDto } from 'src/modules/auth/dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -24,6 +24,8 @@ export class LoginUserGuard implements CanActivate {
       });
       if (user == null || !(await bcrypt.compare(password, user.password)))
         throw new Error('Incorrect email or password');
+
+      request.user = user;
       return true;
     } catch (err) {
       throw new BadRequestException(err.message);

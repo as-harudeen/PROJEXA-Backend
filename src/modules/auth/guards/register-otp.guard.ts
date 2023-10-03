@@ -27,7 +27,6 @@ export class RegisterOTPGuard implements CanActivate {
       );
       if (!claim.user_email || !claim.user_name || !claim.password) {
       }
-      console.log(claim, "jwt claim");
       request.user = claim;
     } catch (err) {
       response.clearCookie('registerToken');

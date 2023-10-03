@@ -1,60 +1,42 @@
-import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
 import { RedisService } from '../redis/redis.service';
-import { AuthService } from '../auth/auth.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Response } from 'express';
-import { RegisterUserDto } from '../user/dto/register-user.dto';
-import { LoginUerDto } from '../user/dto/login-user.dto';
 
 @Injectable()
 export class OtpService {
   constructor(
-    private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly redisService: RedisService,
-    private readonly authService: AuthService,
   ) {}
 
-  async generateAndMailOTP (user_email: string) {
+  /**
+   * Generate OTP , store in redis store and Mail.
+   * @param user_email - Email address of the recipient of the email.
+   * @param key - key for storing redis store
+   * @returns "OTP Sent successfully"
+   */
+  async generateAndMailOTP (user_email: string, key: string) {
     const OTP = await this.mailService.sendOTP(user_email);
-    this.redisService.setItem(`${user_email}-OTP`, OTP);
-    return "OTP Sended successfully";
+    this.redisService.setItem(key, OTP);
+    return "OTP Sent successfully";
   }
+
 
   /**
-   * Generate Register OTP Service.
-   * @param res - Response object
-   * @param registerUserDto - User credantial.
-   * @returns 
+   * Retrive OTP from redis store by
+   * it's key, and validate it.
+   * 
+   * @param otp - OTP for validate.
+   * @param key - redis store key for 
+   *              retrive original OTP.
+   * @throws BadRequestException -
+   *         if OTP not found within the key or
+   *         if OTP not valid
    */
-  async generateRegisterOTP(res: Response, registerUserDto: RegisterUserDto) {
-    try {
-      const { user_email, user_name } = registerUserDto;
-      await this.userService.isExist(user_name, user_email);
-      await this.generateAndMailOTP(user_email);
-      res.cookie(
-        'registerToken',
-        await this.authService.generateRegisterToken(registerUserDto),
-      );
-      return 'Ok';
-    } catch (err) { 
-        throw new BadRequestException(err.message);
-    }
-  }
-
-  async validateRegisterOTP (otp: string, user_email: string) {
-    const OTP = await this.redisService.getItem(`${user_email}-OTP`);
+  async validateOTP (otp: string, key: string) {
+    const OTP = await this.redisService.getItem(key);
     if(!OTP) throw new BadRequestException("OTP Expired");
     if(OTP !== otp) throw new BadRequestException("Invalid OTP");
   }
 
-
-  async login (res: Response, loginUserDto: LoginUerDto) {
-    const { two_factor_enabled } = await this.userService.login(res, loginUserDto);
-    if(!two_factor_enabled) return "Login successfylly";
-    await this.generateAndMailOTP(loginUserDto.user_email);
-    res.status(201);
-    return "OTP Send successfully";
-  }
 }

@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { OtpModule } from './modules/otp/otp.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 
 @Module({
@@ -11,7 +12,7 @@ import { OtpModule } from './modules/otp/otp.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    UserModule, OtpModule
+    UserModule, AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

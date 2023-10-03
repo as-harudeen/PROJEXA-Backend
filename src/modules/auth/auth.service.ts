@@ -2,10 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from '../user/entity/user.entity';
+import { Response } from 'express';
+import { RegisterUserDto } from './dto/register-user.dto';
+import { OtpService } from '../otp/otp.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly otpService: OtpService,
+  ) {}
 
   /**
    * Generate register token.
@@ -29,17 +35,30 @@ export class AuthService {
     });
   }
 
-  async login (user: UserEntity, password: string  ) {
+  async login(res: Response, user: UserEntity) {}
+
+  async generateRegisterOTP(res: Response, registerUserDto: RegisterUserDto) {
     try {
-        if(! await bcrypt.compare(password, user.password)) {
-            throw new Error("Incorrect email or password");
-        }
-        return await this.jwtService.signAsync({
-            user_id: user.user_id,
-            user_email: user.user_email
-        })
+      await this.otpService.generateAndMailOTP(
+        registerUserDto.user_email,
+        `${registerUserDto.user_email}`,
+      );
+      res.cookie(
+        'registerToken',
+        await this.generateRegisterToken(registerUserDto),
+      );
+      return 'OTP sent successfully';
     } catch (err) {
-        throw new BadRequestException(err.message);
+      throw new BadRequestException(err.message);
     }
+  }
+
+  async validateRegisterOTP(otp: string, user_email: string) {
+    await this.otpService.validateOTP(otp, `${user_email}-OTP`);
+    return 'Register OTP Verified';
+  }
+
+  async regenerateRegisterOTP(user_email: string) {
+    return this.otpService.generateAndMailOTP(user_email, `${user_email}-OTP`);
   }
 }
