@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
+import { ProjectStatus } from '@prisma/client';
 
 @Injectable()
 export class PersonalService {
@@ -30,6 +31,7 @@ export class PersonalService {
           project_end_date: new Date(createprojectDto.endDate),
           user_id,
           project_reference: createprojectDto.projectReferences,
+          project_type: "personal"
         },
       });
       return "Created";
@@ -37,4 +39,6 @@ export class PersonalService {
       throw new InternalServerErrorException(err.message);
     }
   }
+
+
 }

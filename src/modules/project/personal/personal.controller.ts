@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
+  Query,
   Req,
   UseGuards,
   UsePipes,
@@ -10,7 +12,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { ZodValidationPipe } from 'src/pipes/zodValidation.pipe';
 import { projectSchema } from './schema/zod.schema';
 import { UserAuthGuard } from 'src/modules/auth/guards/user-auth.guard';
-import { Request } from 'express';
+import { Request, query } from 'express';
 import { PersonalService } from './personal.service';
 import { UserPayloadInterface } from 'src/modules/auth/interface';
 
@@ -30,4 +32,5 @@ export class PersonalController {
       (request.user as UserPayloadInterface).user_id,
     );
   }
+
 }
