@@ -5,6 +5,7 @@ import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { OtpModule } from './modules/otp/otp.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { PersonalModule } from './modules/project/personal/personal.module';
 
 
 @Module({
@@ -12,7 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    UserModule, AuthModule
+    UserModule, AuthModule, PersonalModule
   ],
   controllers: [AppController],
   providers: [AppService],

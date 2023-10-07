@@ -20,7 +20,6 @@ export class UserAuthGuard implements CanActivate {
             request.user = claim;
             return true;
         } catch (err) {
-            console.log(err);
             response.clearCookie("access_token");
             throw new UnauthorizedException(err.message);
         }

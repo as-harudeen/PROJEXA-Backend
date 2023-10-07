@@ -17,7 +17,49 @@ model User {
   password           String
   user_profile       String?
   bio                String?
+  projects Project[]
   is_blocked         Boolean @default(false)
   two_factor_enabled Boolean @default(false)
   createdAt DateTime @default(now())
+}
+
+type ProjectReference {
+  title String
+  link String
+}
+
+enum ProjectType {
+  personal
+  team
+  company
+}
+
+enum TaskStatus {
+  todo
+  analysis
+  code_review
+  testing
+  done
+  released
+}
+
+enum ProjectStatus {
+  pending
+  onprogress
+  completed
+}
+
+model Project {
+  project_id  String @id @default(auto()) @map("_id") @db.ObjectId
+  project_name String
+  project_desc  String
+  project_start_date DateTime
+  project_end_date DateTime
+  user User @relation(fields: [user_id], references: [user_id])
+  user_id String @db.ObjectId
+  project_reference ProjectReference[]
+  project_type ProjectType
+  project_status ProjectStatus @default(pending)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
