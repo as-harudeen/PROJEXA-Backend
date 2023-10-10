@@ -1,31 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { GetProjectQueryInterface } from './interface';
+import { GetProjectsQueryInterface } from './interface';
 import { ProjectStatus } from '@prisma/client';
 
 @Injectable()
 export class QueryService {
-
-
   /**
    * GET PERSONAL PROJECT QUERY BUILDER.
    * the query for retrive personal projects -
    * base on user_id.
-   * 
+   *
    * optionaly accepting s(search value) and f (
-   * filter), 
-   *   => s for retrieve only the project which - 
+   * filter),
+   *   => s for retrieve only the project which -
    *      project name contains s.
-   * 
+   *
    *   => f for filter based on project status
    *      f would be the array of project status.
-   * 
+   *
    * @param user_id - user_id
    * @param s - OPTIONAL - the search value.
    * @param f - OPTIONAL - the filter
    * @returns  database query.
    */
-  getPersonalProjectQuery(user_id: string, s: string, f: ProjectStatus[]) {
-    const query: GetProjectQueryInterface = {
+  getPersonalProjectsQuery(user_id: string, s: string, f: ProjectStatus[]) {
+    const query: GetProjectsQueryInterface = {
       where: {
         user_id,
         project_type: 'personal',
@@ -43,5 +41,20 @@ export class QueryService {
     }
 
     return query;
+  }
+
+  getPersonalOneProjectQuery(user_id: string, project_id: string) {
+    return {
+      where: { project_id, user_id },
+      select: {
+        project_name: true,
+        project_desc: true,
+        project_start_date: true,
+        project_end_date: true,
+        project_status: true,
+        project_id: true,
+        project_reference: true,
+      },
+    };
   }
 }

@@ -36,6 +36,7 @@ enum ProjectType {
 
 enum TaskStatus {
   todo
+  doing
   analysis
   code_review
   testing
@@ -62,4 +63,22 @@ model Project {
   project_status ProjectStatus @default(pending)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  stages Stage[]
+}
+
+
+model Stage {
+  stage_id String @id @default(auto()) @map("_id") @db.ObjectId
+  stage_title String
+  project Project @relation(fields: [project_id], references: [project_id])
+  project_id String @db.ObjectId
+  tasks Task[]
+}
+
+model Task {
+  task_id String @id @default(auto()) @map("_id") @db.ObjectId
+  task_title String
+  task_desc String?
+  stage Stage @relation(fields: [stage_id], references: [stage_id])
+  stage_id String @db.ObjectId
 }

@@ -24,6 +24,7 @@ export class UserService {
       });
       return 'User registered successfully';
     } catch (err) {
+      console.log(err);
       throw new BadRequestException(err.message);
     }
   }

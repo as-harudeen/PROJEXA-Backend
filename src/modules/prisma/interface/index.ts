@@ -4,7 +4,7 @@ import { ProjectStatus, ProjectType } from "@prisma/client"
 /**
  * GET PROJECT QUERY INTERFACE.
  */
-export interface GetProjectQueryInterface {
+export interface GetProjectsQueryInterface {
     where: {
         user_id: string,
         project_type: keyof typeof ProjectType,

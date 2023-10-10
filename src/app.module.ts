@@ -3,9 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
-import { OtpModule } from './modules/otp/otp.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { PersonalModule } from './modules/project/personal/personal.module';
+import { PersonalProjectModule } from './modules/personal-project/personal-project.module';
 
 
 @Module({
@@ -13,7 +12,7 @@ import { PersonalModule } from './modules/project/personal/personal.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    UserModule, AuthModule, PersonalModule
+    UserModule, AuthModule, PersonalProjectModule
   ],
   controllers: [AppController],
   providers: [AppService],

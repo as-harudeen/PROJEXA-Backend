@@ -61,7 +61,10 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.login(response, request.user as UserEntity);
+    const {two_factor_enabled, user_email, user_id} = request.user as UserEntity;
+    const payload = {user_email, user_id};
+    if(two_factor_enabled) return this.authService.generate2AFToken(response, payload);
+    return this.authService.login(response, payload);
   }
 
   @Post("/validate/2AF-otp")
@@ -69,6 +72,10 @@ export class AuthController {
   @UsePipes(ValidateOTPPipe)
   async validate2AFOTP (@Req() req: Request, @Res() res: Response, @Body('otp') otp: string) {
     const {user_email, user_id} = req.user as UserPayloadInterface;
+    console.log("hell");
+    return "Ok";
     return this.authService.validate2AFOTP(res, otp, {user_email, user_id});
   }
+
+
 }
