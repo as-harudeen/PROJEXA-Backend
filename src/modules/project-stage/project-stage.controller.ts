@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { CreateStageDto } from './dto/create-stage.dto';
 import { ZodValidationPipe } from 'src/pipes/zodValidation.pipe';
 import { stageSchema } from './schema/create-stage.zod.schema';
@@ -18,5 +18,13 @@ export class ProjectStageController {
         const { user_id } = req.user as UserPayloadInterface;
         const newStageDetails = {user_id, project_id, stage_title: createStageDto.stage_title};
         return this.projectStageService.createProjectStage(newStageDetails);
+    }
+
+    @Get()
+    @UseGuards(UserAuthGuard)
+    async getProjectStages (@Req() req: Request, @Param('project_id') project_id: string) {
+        const { user_id } = req.user as UserPayloadInterface;
+        console.log("hello");
+        return this.projectStageService.getProjectStages({user_id, project_id});
     }
 }
