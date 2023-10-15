@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
+import { ObjectId } from 'mongodb';
 import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
@@ -43,4 +44,126 @@ export class TaskService {
   }
 
 
+
+  /**
+ * Update the position of tasks within a stage.
+ *
+ * @param {string} stage_id - Identifies the stage where tasks are being updated.
+ * @param {boolean} increment - If true, increment task positions; otherwise, decrement.
+ * @param {number} start - The starting position to update.
+ * @param {number} [end] - Optional ending position to update (inclusive).
+ *
+ * This function adjusts the position of tasks within a stage by incrementing or decrementing their positions.
+ * If 'end' is provided, it updates tasks with positions greater than or equal to 'start' and less than or equal to 'end'.
+ * If 'end' is not provided, it updates tasks with positions greater than or equal to 'start'.
+
+ * Example:
+ * - To increment positions from 3 onwards: updateTaskPosition('stage_id', true, 3)
+ * - To decrement positions from 5 to 10: updateTaskPosition('stage_id', false, 5, 10)
+ *
+ * @throws {Error} If an error occurs during the database update.
+ */
+  private async updateTaskPosition(
+    stage_id: string,
+    increment: boolean,
+    start: number,
+    end?: number,
+  ) {
+    const updateOperation = increment ? { increment: 1 } : { decrement: 1 };
+    const positionQuery =
+      end && end !== 0 ? { gte: start, lte: end } : { gte: start };
+    await this.prisma.task.updateMany({
+      where: {
+        stage_id,
+        position: positionQuery,
+      },
+      data: { position: updateOperation },
+    });
+  }
+
+
+  /**
+ * Change the position of a task within a stage or move it to a different stage.
+ *
+ * @param {object} options - An object containing the following parameters:
+ * - task_id: string - The unique identifier of the task to be moved.
+ * - user_id: string - Identifies the user initiating the change.
+ * - stage_id: string - Identifies the current stage of the task.
+ * - new_stage_id?: string - (Optional) Identifies the new stage for the task if moving it.
+ * - new_position: number - The new position for the task within the same or new stage.
+ *
+ * This function allows users to change the position of a task within the same stage or move it to a different stage.
+ * If 'new_stage_id' is provided, the task is moved to a new stage, and its 'new_position' is set.
+ * If 'new_stage_id' is not provided, the task's position is adjusted within the same stage.
+
+ * Example:
+ * - To move a task to a different stage and set its new position: 
+ *   changePosition({ task_id: 'task_id', user_id: 'user_id', stage_id: 'stage_id', new_stage_id: 'new_stage_id', new_position: 5 })
+ * - To change the position of a task within the same stage: 
+ *   changePosition({ task_id: 'task_id', user_id: 'user_id', stage_id: 'stage_id', new_position: 3 })
+ *
+ * @returns {string} - Returns 'Task position changed' upon successful task position update.
+ *
+ * @throws {Error} If an error occurs during the database update or if the provided IDs are invalid.
+ */
+  async changePosition({
+    task_id,
+    user_id,
+    stage_id,
+    new_stage_id,
+    new_position,
+  }: {
+    task_id: string;
+    user_id: string;
+    stage_id: string;
+    new_stage_id?: string;
+    new_position: number;
+  }) {
+    await this.prisma.stage.findUniqueOrThrow({
+      where: { stage_id, owner: user_id },
+    });
+    if (new_stage_id && ObjectId.isValid(new_stage_id)) {
+      await this.prisma.stage.findUniqueOrThrow({
+        where: { stage_id: new_stage_id, owner: user_id },
+      });
+    }
+    const currTask = await this.prisma.task.findUniqueOrThrow({
+      where: { task_id, stage_id },
+    });
+    if (new_stage_id && stage_id !== new_stage_id) {
+      await this.updateTaskPosition(stage_id, false, currTask.position + 1);
+      await this.updateTaskPosition(new_stage_id, true, new_position);
+      await this.prisma.task.update({
+        where: { task_id },
+        data: { stage_id: new_stage_id, position: new_position },
+      });
+    } else {
+      if (new_position > currTask.position) {
+        await this.updateTaskPosition(
+          stage_id,
+          false,
+          currTask.position + 1,
+          new_position,
+        );
+      } else {
+        await this.updateTaskPosition(
+          stage_id,
+          true,
+          new_position,
+          currTask.position - 1,
+        );
+      }
+    }
+
+    const updateData =
+      stage_id === new_stage_id
+        ? { position: new_position }
+        : { position: new_position, stage_id: new_stage_id };
+    await this.prisma.task.update({
+      where: { task_id },
+      data: updateData,
+    });
+
+    return 'Task position changed';
+  }
 }
