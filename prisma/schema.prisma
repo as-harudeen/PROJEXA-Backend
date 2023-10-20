@@ -21,6 +21,7 @@ model User {
   is_blocked         Boolean @default(false)
   two_factor_enabled Boolean @default(false)
   createdAt DateTime @default(now())
+  stages Stage[]
 }
 
 type ProjectReference {
@@ -73,12 +74,15 @@ model Stage {
   project Project @relation(fields: [project_id], references: [project_id])
   project_id String @db.ObjectId
   tasks Task[]
+  user User @relation(fields: [owner], references: [user_id])
+  owner String @db.ObjectId
 }
 
 model Task {
   task_id String @id @default(auto()) @map("_id") @db.ObjectId
   task_title String
-  task_desc String?
+  task_desc String @default("")
   stage Stage @relation(fields: [stage_id], references: [stage_id])
   stage_id String @db.ObjectId
+  position Int @unique
 }

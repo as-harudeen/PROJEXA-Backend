@@ -5,6 +5,7 @@ import {
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { ObjectId } from 'mongodb';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { EditTaskDto } from './dto/edit-task.dto';
 
 @Injectable()
 export class TaskService {
@@ -165,5 +166,32 @@ export class TaskService {
     });
 
     return 'Task position changed';
+  }
+
+
+  /**
+ * Edit the details of a task within a stage.
+ *
+ * @param {EditTaskDto} editData - An object containing the following parameters:
+ * - user_id: string - Identifies the user making the edit.
+ * - stage_id: string - Identifies the stage to which the task belongs.
+ * - task_id: string - Identifies the task to be edited.
+ * - updatedData: object - Contains the updated data for the task.
+ *
+ * This function allows users to edit the details of a task within a stage, provided that they own the stage.
+ * The 'updatedData' object should contain the fields to be updated.
+ * 
+ * @returns {string} - Returns 'Task updated successfully' upon successful task update.
+ *
+ * @throws {InternalServerErrorException} If an error occurs during the database update or if the provided IDs are invalid.
+ */
+  async editTask ({user_id, stage_id, task_id, updatedData}: EditTaskDto) {
+    try {
+      await this.prisma.stage.findUniqueOrThrow({where: {stage_id, owner: user_id}});
+      await this.prisma.task.update({where: {stage_id, task_id}, data: updatedData});
+      return "Task updated sucessfully";
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
   }
 }

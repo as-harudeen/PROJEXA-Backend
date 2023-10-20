@@ -12,7 +12,7 @@ export class UserAuthGuard implements CanActivate {
         const response: Response = context.switchToHttp().getResponse();
         const token = request.cookies.access_token;
         if(!token) throw new UnauthorizedException();
-
+        
         try {
             const claim = await this.jwtService.verifyAsync(token, {secret: process.env.SECRET});
             if(claim == null) throw new Error("Invalid token");
