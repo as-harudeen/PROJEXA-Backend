@@ -175,5 +175,25 @@ export class UserService {
   }
 
 
+  /**
+   * Retrive all users username and profile.
+   * @param user_id - The unique identifier of the user.
+   * @returns {Promise<UserDetails>}
+   * -- user_name - string - user name
+   * -- user_profile - string - profile image name
+   * @throws {InternalServerErrorException} - If any error occure during perform with database.
+   */
+  async getAllUsers(user_id: string) {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { user_id: { not: user_id } },
+        select: { user_name: true, user_profile: true },
+      });
+      return users;
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 
+ 
 }

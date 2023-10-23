@@ -82,12 +82,22 @@ export class UserController {
   }
 
 
+  @Get('get-all-users')
+  @UseGuards(UserAuthGuard)
+  async getAllUsers (@Req() request: Request) {
+    const { user_id } = request.user as UserPayloadInterface;
+    console.log("hello");
+    return this.userService.getAllUsers(user_id);
+  }
+
+
   @Get(':user_name')
   @UseGuards(UserAuthGuard)
   async getUser(@Req() request: Request,  @Param('user_name') user_name: string) {
     const { user_id } = request.user as UserPayloadInterface;
     return this.userService.getUser(user_id, user_name);
   }
+
 
   
 }
