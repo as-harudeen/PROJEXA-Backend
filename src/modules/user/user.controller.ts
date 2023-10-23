@@ -98,6 +98,19 @@ export class UserController {
     return this.userService.getUser(user_id, user_name);
   }
 
+  @Post('follow/:following_id')
+  @UseGuards(UserAuthGuard)
+  async createConnection (@Req() request: Request, @Param('following_id') following_id: string) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.userService.createConnection(user_id, following_id); 
+  }
+  @Post('unfollow/:following_id')
+  @UseGuards(UserAuthGuard)
+  async removeConnection (@Req() request: Request, @Param('following_id') following_id: string) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.userService.removeConnection(user_id, following_id); 
+  }
+
 
   
 }
