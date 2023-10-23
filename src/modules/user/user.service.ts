@@ -18,12 +18,18 @@ export class UserService {
    * @throws - BadRequestException -
    *           if create user on database get fail.
    */
-  async register({ user_email, user_name, password }: RegisterUserDto) {
+  async register({
+    user_email,
+    user_name,
+    user_full_name,
+    password,
+  }: RegisterUserDto) {
     try {
       await this.prisma.user.create({
         data: {
-          user_email,
           user_name,
+          user_email,
+          user_full_name,
           password,
         },
       });
@@ -45,13 +51,14 @@ export class UserService {
    * summary - string | null - User summary
    * birthday - Date | null - User Birthday
    */
-  async getUser(user_id: string) {
+  async getMyProfile(user_id: string) {
     try {
       return await this.prisma.user.findUniqueOrThrow({
         where: { user_id },
         select: {
           user_name: true,
           user_email: true,
+          user_full_name: true,
           user_profile: true,
           summary: true,
           birthday: true,
@@ -79,7 +86,7 @@ export class UserService {
    *
    * @throws {InternalServerErrorException} If an error occurs during the database update or if the provided user ID is invalid.
    */
-  async editUser(user_id: string, updatedUserData: EdituserDto) {
+  async editMyProfile(user_id: string, updatedUserData: EdituserDto) {
     try {
       return await this.prisma.user.update({
         where: { user_id },
@@ -88,6 +95,7 @@ export class UserService {
           user_name: true,
           user_email: true,
           user_profile: true,
+          user_full_name: true,
           summary: true,
           birthday: true,
         },
@@ -121,4 +129,51 @@ export class UserService {
       throw new InternalServerErrorException(err.message);
     }
   }
+
+
+  /**
+   * Retrive user details by user name.
+   * @param user_id - The unique indetifier of user
+   * @param user_name - User name
+   * @returns {Promise<UserDetails>}
+   * -- user_id - string - user id,
+   * -- user_name - string - user Name of the user,
+   * -- user_full_name - string - Full name of user,
+   * -- user_profile - string - Profile image name of user.
+   * -- summary - string - summary of the user
+   * -- numberOfFollowing - number - Following count,
+   * -- numberOfFollowers - number - Followers count,
+   * -- isCurrentUserFollowing - boolean
+   * 
+   * @throws {InternalServerErrorException} - If any error occure while performing with database.
+   */
+  async getUser(user_id: string, user_name: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { user_name },
+        select: {
+          user_id: true,
+          user_name: true,
+          user_full_name: true,
+          user_profile: true,
+          summary: true,
+          followedByIDs: true,
+          followingIDs: true,
+        },
+      });
+      const { followedByIDs, followingIDs, ...userProfileDetails } = user;
+      const userProfileSummary = {
+        ...userProfileDetails,
+        numberOfFollowing: followingIDs.length,
+        numberOfFollowers: followedByIDs.length,
+        isCurrentUserFollowing: followedByIDs.includes(user_id),
+      };
+      return userProfileSummary;
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+
+
 }

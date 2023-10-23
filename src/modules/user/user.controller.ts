@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Req,
   UploadedFile,
   UseGuards,
@@ -29,11 +30,11 @@ import { ChangeTwoFactorAuthPipe } from './pipe/change-two-factor-auth.pipe';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @Get('myprofile')
   @UseGuards(UserAuthGuard)
-  async getUser(@Req() request: Request) {
+  async getMyProfile(@Req() request: Request) {
     const { user_id } = request.user as UserPayloadInterface;
-    return this.userService.getUser(user_id);
+    return this.userService.getMyProfile(user_id);
   }
 
   @Patch()
@@ -54,27 +55,40 @@ export class UserController {
       }),
     }),
   )
-  async editUser(
+  async editMyProfile(
     @Req() request: Request,
     @Body(new ZodValidationPipe(editUserSchema)) updatedUserData: EdituserDto,
-    @UploadedFile(new FileUploadTransformPipe()) user_profile: string
+    @UploadedFile(new FileUploadTransformPipe()) user_profile: string,
   ) {
     const { user_id } = request.user as UserPayloadInterface;
-    if(user_profile) {
-      updatedUserData.user_profile = user_profile
+    if (user_profile) {
+      updatedUserData.user_profile = user_profile;
     }
-    return this.userService.editUser(user_id, updatedUserData);
+    return this.userService.editMyProfile(user_id, updatedUserData);
   }
-
 
   @Patch('two-factor-auth/:new_state')
   @UseGuards(UserAuthGuard)
   @UsePipes(ChangeTwoFactorAuthPipe)
-  async changeTwoFactorAuthState (
+  async changeTwoFactorAuthState(
     @Req() request: Request,
-    @Param('new_state') new_state: 'enable' | 'disable'
+    @Param('new_state') new_state: 'enable' | 'disable',
   ) {
     const { user_id } = request.user as UserPayloadInterface;
-    return this.userService.toggleTwoFactorAuth(user_id, new_state === 'enable')
+    return this.userService.toggleTwoFactorAuth(
+      user_id,
+      new_state === 'enable',
+    );
   }
+
+
+  @Get(':user_name')
+  @UseGuards(UserAuthGuard)
+  async getUser(@Req() request: Request,  @Param('user_name') user_name: string) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.userService.getUser(user_id, user_name);
+  }
+
+  
 }
+ 
