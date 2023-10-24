@@ -40,4 +40,46 @@ export class TeamService {
   }
 
 
+  /**
+   * Retrive team details of the certain user
+   * @param user_id - The unique identifier of the user
+   * @returns {Promise<TeamDetails>}
+   * - team_id - string
+   * - team_name - string
+   * - team_desc - string
+   * - team_dp - string
+   * - team_lead - 
+   * ---- user_name - string
+   * ---- user_profile - string
+   */
+  async getTeams (user_id: string) {
+    try {
+      return await this.prisma.team.findMany({
+        where: {
+          OR: [
+            {
+              team_admins_id: {has: user_id}
+            },
+            {
+              team_members_id: {has: user_id}
+            }
+          ]
+        },
+        select: {
+          team_id: true,
+          team_name: true,
+          team_dp: true,
+          team_desc: true,
+          team_lead: {
+            select: {
+              user_name: true,
+              user_profile: true
+            }
+          }
+        }
+      })
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }

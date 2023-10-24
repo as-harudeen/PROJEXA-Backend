@@ -52,4 +52,10 @@ export class TeamController {
     return this.teamService.createNewTeam(body, user_id);
   }
 
+  @Get()
+  @UseGuards(UserAuthGuard)
+  async getTeams(@Req() request: Request) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.teamService.getTeams(user_id);
+  }
 }
