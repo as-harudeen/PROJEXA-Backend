@@ -130,7 +130,6 @@ export class UserService {
     }
   }
 
-
   /**
    * Retrive user details by user name.
    * @param user_id - The unique indetifier of user
@@ -144,7 +143,7 @@ export class UserService {
    * -- numberOfFollowing - number - Following count,
    * -- numberOfFollowers - number - Followers count,
    * -- isCurrentUserFollowing - boolean
-   * 
+   *
    * @throws {InternalServerErrorException} - If any error occure while performing with database.
    */
   async getUser(user_id: string, user_name: string) {
@@ -174,7 +173,6 @@ export class UserService {
     }
   }
 
-
   /**
    * Retrive all users username and profile.
    * @param user_id - The unique identifier of the user.
@@ -194,8 +192,6 @@ export class UserService {
       throw new InternalServerErrorException(err.message);
     }
   }
-
-
 
   /**
  * Create a connection between two users, allowing one user to follow the other.
@@ -235,7 +231,6 @@ export class UserService {
     }
   }
 
-
   /**
  * Remove a connection between two users, allowing one user to unfollow another.
  *
@@ -255,7 +250,10 @@ export class UserService {
         select: { followingIDs: true },
       });
       const followingUserDetails = await this.prisma.user.findUniqueOrThrow({
-        where: { user_id: following_id, followedByIDs: { has: followed_by_id } },
+        where: {
+          user_id: following_id,
+          followedByIDs: { has: followed_by_id },
+        },
         select: {
           followedByIDs: true,
         },
@@ -284,6 +282,64 @@ export class UserService {
       return 'remove connection successfully';
     } catch (err) {
       console.log(err);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+
+  /**
+   * Retrive following users username and profile
+   * @param user_name - The user_name of the user
+   * @returns {Promise<UserDetails>}
+   * --user_name - string - User name
+   * --user_profile - string - User profile image name.
+   * @throws {InternalServerErrorException} - If any erorr occure during performing wiht database.
+   */
+  async getFollowingUsers(user_name: string) {
+    try {
+      const users = await this.prisma.user.findUnique({
+        where: { user_name },
+        select: {
+          following: {
+            select: {
+              user_name: true,
+              user_profile: true,
+            },
+          },
+        },
+      });
+      return users.following;
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+
+
+
+  /**
+   * Retrive followers username and profile
+   * @param user_name - The user_name of the user
+   * @returns {Promise<UserDetails>}
+   * --user_name - string - User name
+   * --user_profile - string - User profile image name.
+   * @throws {InternalServerErrorException} - If any erorr occure during performing wiht database.
+   */
+  async getFollowers(user_name: string) {
+    try {
+      const users = await this.prisma.user.findUnique({
+        where: { user_name },
+        select: {
+          followedBy: {
+            select: {
+              user_name: true,
+              user_profile: true,
+            },
+          },
+        },
+      });
+      return users.followedBy;
+    } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
   }
