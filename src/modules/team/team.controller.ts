@@ -70,5 +70,15 @@ export class TeamController {
   } 
 
 
-
+  @Post('invite/:team_id')
+  @UseGuards(UserAuthGuard)
+  async createTeamInvitation (
+    @Req() request: Request,
+    @Param('team_id') team_id: string,
+    @Body ('invitee_id') invitee_id: string
+  ) {
+    console.log("hitting")
+    const {user_id: inviter_id} = request.user as UserPayloadInterface;
+    return this.teamService.createTeamInvitation({team_id, inviter_id, invitee_id});
+  }
 }

@@ -143,5 +143,30 @@ export class TeamService {
     }
   }
 
+  async createTeamInvitation({
+    team_id,
+    inviter_id,
+    invitee_id,
+  }: CreateTeamInvitationDetailsDto) {
+    try {
+      await this.prisma.team.findUniqueOrThrow({
+        where: { team_id, team_admins_id: { has: inviter_id } },
+      });
+      await this.prisma.user.findUniqueOrThrow({
+        where: { user_id: invitee_id },
+      });
 
+      await this.prisma.teamInvitation.create({
+        data: {
+          team_id,
+          team_invitee_id: invitee_id,
+          team_inviter_id: inviter_id,
+        },
+      });
+      return 'Invited successfully';
+    } catch (err) {
+      console.log(err);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }
