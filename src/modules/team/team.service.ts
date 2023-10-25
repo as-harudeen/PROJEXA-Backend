@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { CreateTeamInvitationDetailsDto } from './dto/team-invitation.dto';
 
 @Injectable()
 export class TeamService {
@@ -33,12 +34,11 @@ export class TeamService {
           team_lead_id: user_id,
         },
       });
-      return "Team created successfully";
+      return 'Team created successfully';
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
   }
-
 
   /**
    * Retrive team details of the certain user
@@ -48,22 +48,22 @@ export class TeamService {
    * - team_name - string
    * - team_desc - string
    * - team_dp - string
-   * - team_lead - 
+   * - team_lead -
    * ---- user_name - string
    * ---- user_profile - string
    */
-  async getTeams (user_id: string) {
+  async getTeams(user_id: string) {
     try {
       return await this.prisma.team.findMany({
         where: {
           OR: [
             {
-              team_admins_id: {has: user_id}
+              team_admins_id: { has: user_id },
             },
             {
-              team_members_id: {has: user_id}
-            }
-          ]
+              team_members_id: { has: user_id },
+            },
+          ],
         },
         select: {
           team_id: true,
@@ -73,13 +73,75 @@ export class TeamService {
           team_lead: {
             select: {
               user_name: true,
-              user_profile: true
-            }
-          }
-        }
-      })
+              user_profile: true,
+            },
+          },
+        },
+      });
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
   }
+
+
+  /**
+   * Retrive team detasils
+   * @param team_id - The unique indetifier of the team
+   * @param user_id  - The uniquer indefier of the user
+   * @returns 
+   */
+  async getTeamDetails(team_id: string, user_id: string) {
+    try {
+      const teamDetails = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          OR: [
+            { team_admins_id: { has: user_id } },
+            { team_members_id: { has: user_id } },
+          ],
+        },
+        select: {
+          team_id: true,
+          team_name: true,
+          team_desc: true,
+          team_dp: true,
+          team_lead: {
+            select: {
+              user_id: true,
+              user_name: true,
+              user_profile: true,
+            },
+          },
+          team_admins: {
+            select: {
+              user_id: true,
+              user_name: true,
+              user_profile: true,
+            },
+          },
+          team_members: {
+            select: {
+              user_id: true,
+              user_name: true,
+              user_profile: true,
+            },
+          },
+          invitations: {
+            where: {
+              team_inviter_id: user_id,
+            },
+            select: {
+              team_invitee_id: true,
+            },
+          },
+        },
+      });
+      return teamDetails;
+    } catch (err) {
+      console.log(err.message);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+
 }

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Req,
   UploadedFile,
@@ -19,6 +20,7 @@ import { Request } from 'express';
 import { FileUploadTransformPipe } from 'src/pipes/fileupload.pipe';
 import { TeamService } from './team.service';
 import { UserPayloadInterface } from '../auth/interface';
+import { TransformTeamDetailsInterceptor } from './interceptor/transform-team-details.interceptor';
 
 @Controller('team')
 export class TeamController {
@@ -58,4 +60,15 @@ export class TeamController {
     const { user_id } = request.user as UserPayloadInterface;
     return this.teamService.getTeams(user_id);
   }
+
+  @Get(':team_id')
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(TransformTeamDetailsInterceptor)
+  async getTeamDetails (@Req() request: Request, @Param('team_id') team_id: string) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.teamService.getTeamDetails(team_id, user_id);
+  } 
+
+
+
 }
