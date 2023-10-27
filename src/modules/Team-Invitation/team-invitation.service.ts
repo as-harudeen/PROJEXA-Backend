@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateTeamInvitationDetailsDto } from '../temp/team-invitation.dto';
-
+import { CreateTeamInvitationDetailsDto } from './dto/team-invitation.dto';
+import { CancelTeamInvitationDto } from './dto/cancel-team-invitation.dto';
 
 @Injectable()
 export class TeamInvitationService {
@@ -93,4 +93,43 @@ export class TeamInvitationService {
     }
   }
 
+  async cancelTeamInvitation({
+    inviter_name,
+    team_invitation_id,
+    team_inviter_id,
+  }: CancelTeamInvitationDto) {
+    try {
+      const {
+        team_invitee: { user_name: invitee_name },
+        team_activity_id,
+      } = await this.prisma.teamInvitation.delete({
+        where: { team_invitation_id, team_inviter_id },
+        select: {
+          team_invitee: {
+            select: {
+              user_name: true,
+            },
+          },
+          team_id: true,
+          team_activity_id: true,
+        },
+      });
+
+      const cancelLog = `${inviter_name} has canceled the invitation for ${invitee_name}.`;
+      await this.prisma.teamActivityLog.create({
+        data: {
+          team_activity_id,
+          log_text: cancelLog,
+        },
+      });
+
+      console.log('cancelled');
+      return 'Invitation cancelled';
+    } catch (err) {
+      console.log(err);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+ 
 }

@@ -36,4 +36,20 @@ export class TeamInvitationController {
     });
   }
 
+  @Delete('cancel/:team_invitation_id')
+  @UseGuards(UserAuthGuard)
+  async cancelTeamInvitation(
+    @Req() request: Request,
+    @Param('team_invitation_id') team_invitation_id: string,
+  ) {
+    const { user_id: team_inviter_id, user_name: inviter_name } =
+      request.user as UserPayloadInterface;
+    return this.teamInvitationService.cancelTeamInvitation({
+      inviter_name,
+      team_inviter_id,
+      team_invitation_id,
+    });
+  }
+
+ 
 }
