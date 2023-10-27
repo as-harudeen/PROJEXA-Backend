@@ -51,5 +51,40 @@ export class TeamInvitationController {
     });
   }
 
- 
+  @Get('')
+  @UseGuards(UserAuthGuard)
+  async getTeamInvitations(@Req() request: Request) {
+    const { user_id: team_invitee_id } = request.user as UserPayloadInterface;
+    return this.teamInvitationService.getTeamInvitations(team_invitee_id);
+  }
+
+  @Put('accept/:team_invitation_id')
+  @UseGuards(UserAuthGuard)
+  async acceptTeamInvitation(
+    @Req() request: Request,
+    @Param('team_invitation_id') team_invitation_id: string,
+  ) {
+    const { user_name, user_id: team_invitee_id } =
+      request.user as UserPayloadInterface;
+    return this.teamInvitationService.acceptTeamInvitation({
+      user_name,
+      team_invitation_id,
+      team_invitee_id,
+    });
+  }
+
+  @Put('reject/:team_invitation_id')
+  @UseGuards(UserAuthGuard)
+  async rejectTeamInvitation(
+    @Req() request: Request,
+    @Param('team_invitation_id') team_invitation_id: string,
+  ) {
+    const { user_name: team_invitee_name, user_id: team_invitee_id } =
+      request.user as UserPayloadInterface;
+    return this.teamInvitationService.rejectTeamInvitation({
+      team_invitee_name,
+      team_invitation_id,
+      team_invitee_id,
+    });
+  }
 }

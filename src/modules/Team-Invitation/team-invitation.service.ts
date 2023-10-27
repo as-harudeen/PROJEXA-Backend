@@ -1,8 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeamInvitationDetailsDto } from './dto/team-invitation.dto';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CancelTeamInvitationDto } from './dto/cancel-team-invitation.dto';
-
+import { RejectTeamInvitationDto } from './dto/reject-team-invitation.dto';
 @Injectable()
 export class TeamInvitationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -131,5 +132,97 @@ export class TeamInvitationService {
     }
   }
 
- 
+  async getTeamInvitations(team_invitee_id: string) {
+    console.log('from get team invitation service');
+    try {
+      return this.prisma.teamInvitation.findMany({
+        where: {
+          team_invitee_id,
+        },
+        select: {
+          team_invitation_id: true,
+          team: {
+            select: {
+              team_name: true,
+              team_desc: true,
+              team_dp: true,
+            },
+          },
+          team_inviter: {
+            select: {
+              user_name: true,
+              user_profile: true,
+            },
+          },
+        },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+  async acceptTeamInvitation({
+    team_invitation_id,
+    team_invitee_id,
+    user_name,
+  }: AcceptInvitationDto) {
+    try {
+      const { team_id, team_activity_id } = await this.prisma.teamInvitation.delete({
+        where: { team_invitation_id, team_invitee_id },
+        select: {
+          team_id: true,
+          team_activity_id: true
+        },
+      });
+      await this.prisma.team.update({
+        where: { team_id },
+        data: {
+          team_members_id: { push: team_invitee_id },
+        },
+      });
+
+      const joinedLog = `${user_name} has joined`;
+      await this.prisma.teamActivityLog.create({
+        data: {
+          team_activity_id,
+          log_text: joinedLog,
+        },
+      });
+
+      return 'Team invited accepted';
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+  async rejectTeamInvitation({
+    team_invitation_id,
+    team_invitee_id,
+    team_invitee_name,
+  }: RejectTeamInvitationDto) {
+    try {
+      const { team_activity_id } = await this.prisma.teamInvitation.delete({
+        where: {
+          team_invitation_id,
+          team_invitee_id,
+        },
+        select: {
+          team_activity_id: true,
+        },
+      });
+
+      const rejectTeamInvitationLog = `${team_invitee_name} has rejected the invitation`;
+
+      await this.prisma.teamActivityLog.create({
+        data: {
+          team_activity_id,
+          log_text: rejectTeamInvitationLog
+        }
+      });
+
+      return 'Rejected successfully';
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }
