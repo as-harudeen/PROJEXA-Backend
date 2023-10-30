@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Post,
   Req,
@@ -13,6 +14,7 @@ import { projectSchema } from '../personal-project/schema/zod.schema';
 import { CreateTeamProjectDto } from './dto/create-team-project.dto';
 import { Request } from 'express';
 import { UserPayloadInterface } from '../auth/interface';
+import { GetOneTeamProjectDetailsParamDto } from './dto/get-one-project-details.dto';
 
 @Controller('team/:team_id/projects')
 export class TeamProjectController {
@@ -34,6 +36,14 @@ export class TeamProjectController {
     });
   }
 
-  
+  @Get()
+  @UseGuards(UserAuthGuard)
+  async getTeamProjects(
+    @Req() request: Request,
+    @Param('team_id') team_id: string,
+  ) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.teamProjectService.getTeamProjects({ user_id, team_id });
+  }
 
 }

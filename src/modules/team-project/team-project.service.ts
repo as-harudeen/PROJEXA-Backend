@@ -54,4 +54,46 @@ export class TeamProjectService {
     }
   }
 
+  async getTeamProjects({ user_id, team_id }: GetTeamProjectsDto) {
+    try {
+      const {
+        team_projects: { team_projects },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          OR: [
+            {
+              team_admins_id: { has: user_id },
+            },
+            {
+              team_members_id: { has: user_id },
+            },
+          ],
+        },
+        select: {
+          team_projects: {
+            select: {
+              team_projects: {
+                select: {
+                  team_project_id: true,
+                  project_name: true,
+                  project_desc: true,
+                  project_status: true,
+                  project_start_date: true,
+                  project_end_date: true,
+                  project_reference: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return team_projects;
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
+ 
 }
