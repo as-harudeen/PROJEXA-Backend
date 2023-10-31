@@ -46,4 +46,16 @@ export class TeamProjectController {
     return this.teamProjectService.getTeamProjects({ user_id, team_id });
   }
 
+  @Get(':project_id')
+  @UseGuards(UserAuthGuard)
+  async getOneTeamProject(
+    @Req() request: Request,
+    @Param() param: GetOneTeamProjectDetailsParamDto,
+  ) {
+    const { user_id } = request.user as UserPayloadInterface;
+    return this.teamProjectService.getOnePorjectDetails({
+      user_id,
+      ...param,
+    });
+  }
 }

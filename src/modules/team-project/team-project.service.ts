@@ -95,5 +95,48 @@ export class TeamProjectService {
     }
   }
 
- 
+  async getOnePorjectDetails({
+    user_id,
+    team_id,
+    project_id,
+  }: GetOneTeamProjectDetailsDto) {
+    const {
+      team_projects: { team_projects_id },
+    } = await this.prisma.team.findUniqueOrThrow({
+      where: {
+        team_id,
+        OR: [
+          {
+            team_admins_id: { has: user_id },
+          },
+          {
+            team_members_id: { has: user_id },
+          },
+        ],
+      },
+      select: {
+        team_projects: {
+          select: {
+            team_projects_id: true,
+          },
+        },
+      },
+    });
+
+    return await this.prisma.teamIndividualProject.findUniqueOrThrow({
+      where: {
+        team_project_id: project_id,
+        team_projects_id,
+      },
+      select: {
+        team_project_id: true,
+        project_name: true,
+        project_desc: true,
+        project_status: true,
+        project_start_date: true,
+        project_end_date: true,
+        project_reference: true,
+      },
+    });
+  }
 }
