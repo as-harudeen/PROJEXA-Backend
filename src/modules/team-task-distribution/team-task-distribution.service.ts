@@ -77,4 +77,58 @@ export class TeamTaskDistributionService {
     });
   }
 
+  async getUsersTasks({ team_lead_id, team_id, project_id }: GetUsersTasksDto) {
+    try {
+      return await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          team_lead_id,
+        },
+        select: {
+          team_members: {
+            select: {
+              team_task_assigned_to: {
+                where: {
+                  team_project_id: project_id,
+                },
+                select: {
+                  task_id: true,
+                  task_title: true,
+                  task_priority: true,
+                  task_status: true,
+                  task_desc: true,
+                },
+              },
+              user_name: true,
+              user_id: true,
+              user_profile: true,
+            },
+          },
+          team_admins: {
+            select: {
+              team_task_assigned_to: {
+                where: {
+                  team_project_id: project_id,
+                },
+                select: {
+                  task_id: true,
+                  task_title: true,
+                  task_priority: true,
+                  task_status: true,
+                  task_desc: true,
+                },
+              },
+              user_name: true,
+              user_id: true,
+              user_profile: true,
+            },
+          },
+        },
+      });
+    } catch (err) {
+      console.log(err);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
 }

@@ -42,5 +42,17 @@ export class TeamTaskDistributionController {
       team_lead_id,
     });
   }
+
+  @Get('users/tasks')
+  @UseGuards(UserAuthGuard)
+  @UseInterceptors(TransformGetUsersTasksInterceptor)
+  async getUsersTasks(
+    @Req() request: Request,
+    @Param() param: GetUsersTasksParamDto,
+  ) {
+    const { user_id: team_lead_id } = request.user as UserPayloadInterface;
+    return this.teamTaskDistributionService.getUsersTasks({ ...param, team_lead_id });
+  }
+
   
 }
