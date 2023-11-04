@@ -131,4 +131,69 @@ export class TeamTaskDistributionService {
     }
   }
 
+
+  async changeTaskStage({
+    team_id,
+    project_id,
+    team_lead_id,
+    task_id,
+    stage_id,
+    new_stage_id,
+  }: ChangeTaskStageDto) {
+    try {
+      const {
+        team_projects: { team_projects_id },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: { team_id, team_lead_id },
+        select: {
+          team_projects: {
+            select: {
+              team_projects_id: true,
+            },
+          },
+        },
+      });
+
+      const {
+        task_distribution_board: { board_id },
+      } = await this.prisma.teamIndividualProject.findUniqueOrThrow({
+        where: {
+          team_project_id: project_id,
+          team_projects_id,
+        },
+        select: {
+          task_distribution_board: {
+            select: {
+              board_id: true,
+            },
+          },
+        },
+      });
+
+      await this.prisma.taskDistributionBoardStage.findUniqueOrThrow({
+        where: {
+          task_distribution_board_stage_id: new_stage_id,
+          task_distribution_board_id: board_id,
+        },
+      });
+
+      await this.prisma.teamProjectTask.update({
+        where: {
+          task_id,
+          task_distribution_board_stage_id: stage_id,
+          task_distribution_board_stage: {
+            task_distribution_board_id: board_id,
+          },
+        },
+        data: {
+          task_distribution_board_stage_id: new_stage_id,
+        },
+      });
+
+      return 'Task staged successfully';
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
 }
