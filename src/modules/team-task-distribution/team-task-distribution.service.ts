@@ -131,6 +131,59 @@ export class TeamTaskDistributionService {
     }
   }
 
+  async assignTask({
+    team_id,
+    team_lead_id,
+    project_id,
+    task_id,
+    user_id,
+  }: AssignTeamTaskDto) {
+    try {
+      const {
+        team_projects: { team_projects_id },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          team_lead_id,
+          OR: [
+            { team_admins_id: { has: user_id } },
+            { team_members_id: { has: user_id } },
+          ],
+        },
+        select: {
+          team_projects: {
+            select: {
+              team_projects_id: true,
+            },
+          },
+        },
+      });
+
+      await this.prisma.teamIndividualProject.findUniqueOrThrow({
+        where: {
+          team_project_id: project_id,
+          team_projects_id,
+        },
+      });
+
+      await this.prisma.teamProjectTask.update({
+        where: {
+          task_id,
+          team_project_id: project_id,
+        },
+        data: {
+          assigned_by_user_id: team_lead_id,
+          assigned_to_user_id: user_id,
+          assigned_at: new Date(),
+          task_distribution_board_stage_id: null,
+        },
+      });
+
+      return 'Task Assigned successfully';
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 
   async changeTaskStage({
     team_id,
@@ -190,7 +243,7 @@ export class TeamTaskDistributionService {
         },
       });
 
-      return 'Task staged successfully';
+      return 'Task stage changed successfully';
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }

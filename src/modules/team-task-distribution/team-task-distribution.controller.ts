@@ -54,6 +54,20 @@ export class TeamTaskDistributionController {
     return this.teamTaskDistributionService.getUsersTasks({ ...param, team_lead_id });
   }
 
+  @Patch('task/:task_id/assign')
+  @UseGuards(UserAuthGuard)
+  async assignTask(
+    @Req() request: Request,
+    @Param() param: AssignTeamTaskParamDto,
+    @Body('user_id') user_id: string,
+  ) {
+    const { user_id: team_lead_id } = request.user as UserPayloadInterface;
+    return this.teamTaskDistributionService.assignTask({
+      ...param,
+      user_id,
+      team_lead_id,
+    });
+  }
 
   @Patch('change/stage/:stage_id/task/:task_id')
   @UseGuards(UserAuthGuard)
