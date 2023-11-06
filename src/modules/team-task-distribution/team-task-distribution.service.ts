@@ -249,4 +249,72 @@ export class TeamTaskDistributionService {
     }
   }
 
+  async relocateTask({
+    team_id,
+    project_id,
+    task_id,
+    user_id,
+    team_lead_id,
+    stage_id,
+  }: RelocateTeamTaskDto) {
+    try {
+      const {
+        team_projects: { team_projects_id },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          team_lead_id,
+          OR: [
+            {
+              team_admins_id: { has: user_id },
+            },
+            {
+              team_members_id: { has: user_id },
+            },
+          ],
+        },
+        select: {
+          team_projects: {
+            select: {
+              team_projects_id: true,
+            },
+          },
+        },
+      });
+
+      await this.prisma.teamIndividualProject.findUniqueOrThrow({
+        where: {
+          team_project_id: project_id,
+          team_projects_id,
+          task_distribution_board: {
+            task_distribution_stages: {
+              some: {
+                task_distribution_board_stage_id: stage_id,
+              },
+            },
+          },
+        },
+      });
+
+      await this.prisma.teamProjectTask.update({
+        where: {
+          task_id,
+          assigned_to_user_id: user_id,
+          team_project_id: project_id,
+          task_status: 'todo',
+        },
+        data: {
+          assigned_by_user_id: null,
+          assigned_to_user_id: null,
+          assigned_at: null,
+          task_distribution_board_stage_id: stage_id,
+        },
+      });
+
+      return 'Task relocate successfully';
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
+
 }

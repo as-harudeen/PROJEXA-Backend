@@ -84,5 +84,22 @@ export class TeamTaskDistributionController {
     });
   }
 
+  @Patch('user/:user_id/relocate/task/:task_id')
+  @UseGuards(UserAuthGuard)
+  async relocateTask(
+    @Req() request: Request,
+    @Param() param: RelocateTeamTaskParamDto,
+    @Body('stage_id') stage_id: string,
+  ) {
+    const { user_id: team_lead_id } = request.user as UserPayloadInterface;
+    return this.teamTaskDistributionService.relocateTask({
+      ...param,
+      stage_id,
+      team_lead_id,
+    });
+  }
+
+  
+
   
 }
