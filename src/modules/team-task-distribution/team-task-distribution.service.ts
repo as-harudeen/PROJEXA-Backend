@@ -317,4 +317,62 @@ export class TeamTaskDistributionService {
     }
   }
 
+  async repositionTask({
+    team_id,
+    team_lead_id,
+    project_id,
+    task_id,
+    user_id,
+    new_user_id,
+  }: RepositionTaskDto) {
+    try {
+      const {
+        team_projects: { team_projects_id },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          team_lead_id,
+          OR: [
+            {
+              team_admins_id: { has: new_user_id },
+            },
+            {
+              team_members_id: { has: new_user_id },
+            },
+          ],
+        },
+        select: {
+          team_projects: {
+            select: {
+              team_projects_id: true,
+            },
+          },
+        },
+      });
+
+      await this.prisma.teamIndividualProject.findUniqueOrThrow({
+        where: {
+          team_project_id: project_id,
+          team_projects_id,
+        },
+      });
+
+      await this.prisma.teamProjectTask.update({
+        where: {
+          task_id,
+          assigned_to_user_id: user_id,
+          team_project_id: project_id,
+        },
+        data: {
+          assigned_to_user_id: new_user_id,
+          assigned_at: new Date(),
+        },
+      });
+
+      return 'Task reposition successfully';
+    } catch (err) {
+      console.log(err);
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }
