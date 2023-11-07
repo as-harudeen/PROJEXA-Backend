@@ -16,7 +16,11 @@ import { GetTaskParamDto } from './dto/get-task.dto';
 import { TransformGetTaskInterceptor } from './interceptor/transform-get-task.interceptor';
 import { UpdateTaskStatusParamDto } from './dto/update-task-status.dto';
 import { TeamTaskStatus } from '@prisma/client';
-
+import { ValidateUpdateTaskPipe } from './pipe/validate-update-task.pipe';
+import {
+  UpdateTeamTaskBodyDto,
+  UpdateTeamTaskParamDto,
+} from './dto/update-team-task.dto';
 
 @Controller('team/:team_id/project/:project_id/task')
 export class TeamTaskController {
@@ -51,4 +55,19 @@ export class TeamTaskController {
     });
   }
 
+  @Patch(':task_id')
+  @UseGuards(UserAuthGuard)
+  async updateTeamTask(
+    @Req() request: Request,
+    @Param() param: UpdateTeamTaskParamDto,
+    @Body(new ValidateUpdateTaskPipe())
+    updated_task_details: UpdateTeamTaskBodyDto,
+  ) {
+    const { user_id: team_lead_id } = request.user as UserPayloadInterface;
+    return this.teamTaskService.updateTeamTask({
+      ...param,
+      team_lead_id,
+      updated_task_details,
+    });
+  }
 }

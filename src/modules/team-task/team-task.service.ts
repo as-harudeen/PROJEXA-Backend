@@ -106,4 +106,51 @@ export class TeamTaskService {
     }
   }
 
+  async updateTeamTask({
+    team_id,
+    project_id,
+    task_id,
+    team_lead_id,
+    updated_task_details
+  }: UpdateTeamTaskDto) {
+
+
+    try {
+      const {
+        team_projects: { team_projects_id },
+      } = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          team_lead_id
+        },
+        select: {
+          team_projects: {
+            select: {
+              team_projects_id: true,
+            },
+          },
+        },
+      });
+
+
+      await this.prisma.teamIndividualProject.findUniqueOrThrow({
+        where: {
+          team_project_id: project_id,
+          team_projects_id
+        }
+      });
+
+      await this.prisma.teamProjectTask.update({
+        where: {
+          task_id,
+          team_project_id: project_id,
+        },
+        data: updated_task_details
+      })
+
+      return "Task updated successfully";
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+  }
 }
