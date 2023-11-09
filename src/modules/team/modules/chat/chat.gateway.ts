@@ -74,5 +74,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('team:message:receive', newMessage);
   }
 
- 
+  @SubscribeMessage('team:chat:typing')
+  async handleTeamChatTyping(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() { team_id }: { team_id: string },
+  ) {
+    const user_id = await this.chatService.getUserIdFromSocket(socket);
+    const { user_name } = await this.authService.checkUserExistenceInTeam({
+      team_id,
+      user_id,
+    });
+
+    this.server
+      .to(team_id)
+      .except(socket.id)
+      .emit('team:chat:typing', { user_name });
+  }
+
 }
