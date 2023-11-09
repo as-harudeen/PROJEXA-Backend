@@ -3,12 +3,14 @@ import { Socket } from 'socket.io';
 import { parse } from 'cookie';
 import { WsException } from '@nestjs/websockets';
 import { AuthService } from 'src/modules/auth/auth.service';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { UserPayloadInterface } from 'src/modules/auth/interface';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getUserIdFromSocket(socket: Socket) {
@@ -25,4 +27,44 @@ export class ChatService {
     return (user as UserPayloadInterface).user_id;
   }
 
+
+  async getAllTeamMessages({
+    team_id,
+    user_id,
+  }: {
+    team_id: string;
+    user_id: string;
+  }) {
+      const {team_chats} = await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          OR: [
+            {
+              team_admins_id: { has: user_id },
+            },
+            {
+              team_members_id: { has: user_id },
+            },
+          ],
+        },
+        select: {
+          team_chats: {
+            select: {
+              chat_text: true,
+              sended_at: true,
+              chatter: {
+                select: {
+                  user_name: true,
+                  user_profile: true,
+                  user_id: true
+                },
+              },
+              
+            },
+          },
+        },
+      });
+      return team_chats;
+
+  }
 }
