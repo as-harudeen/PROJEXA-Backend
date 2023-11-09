@@ -1,16 +1,23 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
+import { ChatService } from './chat.service';
 
 @WebSocketGateway(8000, {
   cors: { origin: 'http://localhost:5173', credentials: true },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(
+    private readonly chatService: ChatService,
+  ) {}
 
   @WebSocketServer() server: Server;
 
@@ -23,5 +30,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('disconnected');
   }
 
-  
+  @SubscribeMessage('team:chat:join')
+  async handleTeamChatJoin(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() { team_id }: { team_id: string },
+  ) {
+    try {
+      console.log(`team:chat:join`);
+      const user_id = await this.chatService.getUserIdFromSocket(socket);
+      const messages = await this.chatService.getAllTeamMessages({
+        team_id,
+        user_id,
+      });
+
+      socket.join(team_id);
+      socket.emit('team:chats', messages);
+    } catch (err) {
+      throw new WsException(err.message);
+    }
+  }
+
 }
