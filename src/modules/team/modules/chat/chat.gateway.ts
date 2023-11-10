@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { AuthService } from 'src/modules/auth/auth.service';
 
 @WebSocketGateway(8000, {
   cors: { origin: 'http://localhost:5173', credentials: true },
@@ -17,6 +18,7 @@ import { ChatService } from './chat.service';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
+    private readonly authService: AuthService,
   ) {}
 
   @WebSocketServer() server: Server;
@@ -50,4 +52,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('team:message:send')
+  async handleSendMessage(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() { team_id, message }: { team_id: string; message: string },
+  ) {
+    const user_id = await this.chatService.getUserIdFromSocket(socket);
+    const user = await this.authService.checkUserExistenceInTeam({
+      team_id,
+      user_id,
+    });
+    const newMessage = await this.chatService.storeTeamChat({
+      message,
+      team_id,
+      user_id,
+    });
+
+    this.server
+      .to(team_id)
+      .except(socket.id)
+      .emit('team:message:receive', newMessage);
+  }
+
+ 
 }
