@@ -91,4 +91,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('team:chat:typing', { user_name });
   }
 
+  @SubscribeMessage('team:video-call:init')
+  async handleTeamVideoCallInit(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() { team_id }: { team_id: string },
+  ) {
+    const user_id = await this.chatService.getUserIdFromSocket(socket);
+    
+      await this.authService.checkUserExistenceInTeam({
+        team_id,
+        user_id,
+      });
+
+    const roomId = `${user_id}-${team_id}`;
+
+    this.server.to(socket.id).emit('team:video-call:inited', { roomId });
+  }
 }
