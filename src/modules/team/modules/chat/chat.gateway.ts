@@ -68,6 +68,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       user_id,
     });
 
+
     this.server
       .to(team_id)
       .except(socket.id)
@@ -97,7 +98,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() { team_id }: { team_id: string },
   ) {
     const user_id = await this.chatService.getUserIdFromSocket(socket);
-    
+    const { user_name, user_profile } =
       await this.authService.checkUserExistenceInTeam({
         team_id,
         user_id,
@@ -106,5 +107,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomId = `${user_id}-${team_id}`;
 
     this.server.to(socket.id).emit('team:video-call:inited', { roomId });
+
+    this.server.to(team_id).emit('team:video-call:started', {
+      from: {
+        user_name,
+        user_profile,
+      },
+      roomId,
+    });
   }
 }
