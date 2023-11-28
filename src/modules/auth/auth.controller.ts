@@ -61,21 +61,28 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const {two_factor_enabled, user_email, user_id} = request.user as UserEntity;
-    const payload = {user_email, user_id};
-    if(two_factor_enabled) return this.authService.generate2AFToken(response, payload);
-    return this.authService.login(response, payload);
+    const { two_factor_enabled, user_id, user_name, user_email } =
+      request.user as UserEntity;
+    const payload = { user_name, user_id, user_email, two_factor_enabled };
+    if (two_factor_enabled)
+      return this.authService.generate2AFToken(response, payload);
+    await this.authService.login(response, payload);
+    return { user_id, user_name, isTwoFacAuthEnabled: two_factor_enabled };
   }
 
-  @Post("/validate/2AF-otp")
+  @Post('validate/TFA-otp')
   @UseGuards(TwoAFGuard)
   @UsePipes(ValidateOTPPipe)
-  async validate2AFOTP (@Req() req: Request, @Res() res: Response, @Body('otp') otp: string) {
-    const {user_email, user_id} = req.user as UserPayloadInterface;
-    console.log("hell");
-    return "Ok";
-    return this.authService.validate2AFOTP(res, otp, {user_email, user_id});
+  async validate2AFOTP(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body('otp') otp: string,
+  ) {
+    const { user_name, user_id, user_email, two_factor_enabled } =
+      req.user as UserPayloadInterface & { two_factor_enabled: boolean };
+    await this.authService.validate2AFOTP(res, otp, { user_email, user_id });
+    console.log(two_factor_enabled, ' from validate/TFA-otp');
+    res.status(200);
+    return { user_id, user_name, isTwoFacAuthEnabled: two_factor_enabled };
   }
-
-
 }

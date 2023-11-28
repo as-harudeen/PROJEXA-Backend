@@ -3,9 +3,10 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { RegisterUserDto } from '../auth/dto/register-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EdituserDto } from './dto/edit-user.dto';
+import { RegisterUserDto } from '../auth/dto/register-user.dto';
+import { GetAllUsersDto } from './dto/get-all-users.dto';
 
 @Injectable()
 export class UserService {
@@ -181,11 +182,28 @@ export class UserService {
    * -- user_profile - string - profile image name
    * @throws {InternalServerErrorException} - If any error occure during perform with database.
    */
-  async getAllUsers(user_id: string) {
+  async getAllUsers({
+    s: searchValue,
+    user_id,
+    l: limit,
+    p: currPage,
+  }: GetAllUsersDto) {
     try {
+      const skip = limit * (currPage - 1);
       const users = await this.prisma.user.findMany({
-        where: { user_id: { not: user_id } },
-        select: { user_name: true, user_profile: true },
+        where: {
+          AND: [
+            {
+              user_id: { not: user_id },
+            },
+            {
+              user_name: { contains: searchValue },
+            },
+          ],
+        },
+        skip,
+        take: limit,
+        select: { user_name: true, user_profile: true, user_id: true },
       });
       return users;
     } catch (err) {
@@ -286,7 +304,6 @@ export class UserService {
     }
   }
 
-
   /**
    * Retrive following users username and profile
    * @param user_name - The user_name of the user
@@ -313,9 +330,6 @@ export class UserService {
       throw new InternalServerErrorException(err.message);
     }
   }
-
-
-
 
   /**
    * Retrive followers username and profile

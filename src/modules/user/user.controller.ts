@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -13,18 +14,20 @@ import {
 } from '@nestjs/common';
 
 import { UserService } from './user.service';
-import { UserAuthGuard } from '../auth/guards/user-auth.guard';
-import { Request } from 'express';
-import { UserPayloadInterface } from '../auth/interface';
+import { Request, query } from 'express';
 import { EdituserDto } from './dto/edit-user.dto';
 import { ZodValidationPipe } from 'src/pipes/zodValidation.pipe';
 import { editUserSchema } from './schema/zod.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { diskStorage } from 'multer';
-import { FileUploadTransformPipe } from './pipe/fileupload.pipe';
+import { FileUploadTransformPipe } from '../../pipes/fileupload.pipe';
 import { UsernameAvailableGuard } from './guard/UsernameAvailable.guard';
 import { ChangeTwoFactorAuthPipe } from './pipe/change-two-factor-auth.pipe';
+import { UserAuthGuard } from '../auth/guards/user-auth.guard';
+import { UserPayloadInterface } from '../auth/interface';
+import { PaginationQueryTransformPipe } from 'src/pipes/pagination-query-transform.pipe';
+import { GetAllUsersQueryDto } from './dto/get-all-users.dto';
 
 @Controller('user')
 export class UserController {
@@ -81,31 +84,31 @@ export class UserController {
     );
   }
 
-  
   @Get('get-all-users')
   @UseGuards(UserAuthGuard)
-  async getAllUsers (@Req() request: Request) {
+  async getAllUsers(@Req() request: Request, @Query(new PaginationQueryTransformPipe(+process.env.MAX_USERS_PAGINATION_LIMIT)) query: GetAllUsersQueryDto) {
     const { user_id } = request.user as UserPayloadInterface;
-    console.log("hello");
-    return this.userService.getAllUsers(user_id);
+    return this.userService.getAllUsers({...query, user_id});
   }
-  
+
   @Get(':user_name/following-users')
   @UseGuards(UserAuthGuard)
-  async getFollowingUsers (@Param('user_name') user_name: string) {
+  async getFollowingUsers(@Param('user_name') user_name: string) {
     return this.userService.getFollowingUsers(user_name);
   }
 
-
   @Get(':user_name/followers')
   @UseGuards(UserAuthGuard)
-  async getFollowers (@Param('user_name') user_name: string) {
+  async getFollowers(@Param('user_name') user_name: string) {
     return this.userService.getFollowers(user_name);
   }
 
   @Get(':user_name')
   @UseGuards(UserAuthGuard)
-  async getUser(@Req() request: Request,  @Param('user_name') user_name: string) {
+  async getUser(
+    @Req() request: Request,
+    @Param('user_name') user_name: string,
+  ) {
     const { user_id } = request.user as UserPayloadInterface;
     console.log('fetching user details');
     return this.userService.getUser(user_id, user_name);
@@ -113,18 +116,21 @@ export class UserController {
 
   @Post('follow/:following_id')
   @UseGuards(UserAuthGuard)
-  async createConnection (@Req() request: Request, @Param('following_id') following_id: string) {
+  async createConnection(
+    @Req() request: Request,
+    @Param('following_id') following_id: string,
+  ) {
     const { user_id } = request.user as UserPayloadInterface;
-    return this.userService.createConnection(user_id, following_id); 
+    return this.userService.createConnection(user_id, following_id);
   }
+
   @Post('unfollow/:following_id')
   @UseGuards(UserAuthGuard)
-  async removeConnection (@Req() request: Request, @Param('following_id') following_id: string) {
+  async removeConnection(
+    @Req() request: Request,
+    @Param('following_id') following_id: string,
+  ) {
     const { user_id } = request.user as UserPayloadInterface;
-    return this.userService.removeConnection(user_id, following_id); 
+    return this.userService.removeConnection(user_id, following_id);
   }
-
-
-  
 }
- 

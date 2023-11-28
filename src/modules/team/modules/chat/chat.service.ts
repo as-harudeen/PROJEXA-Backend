@@ -27,6 +27,37 @@ export class ChatService {
     return (user as UserPayloadInterface).user_id;
   }
 
+  async storeTeamChat({
+    team_id,
+    user_id,
+    message,
+  }: {
+    team_id: string;
+    user_id: string;
+    message: string;
+  }) {
+    try {
+      return await this.prisma.teamChat.create({
+        data: {
+          team_id,
+          chatter_id: user_id,
+          chat_text: message,
+        }, select: {
+          chat_text: true,
+          chatter: {
+            select: {
+              user_name: true,
+              user_profile: true,
+              user_id: true
+            }
+          },
+          sended_at: true,
+        }
+      });
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  }
 
   async getAllTeamMessages({
     team_id,

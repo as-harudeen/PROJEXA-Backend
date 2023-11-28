@@ -7,5 +7,6 @@ export class UserEntity {
     bio: string;
     is_blocked: boolean;
     two_factor_enabled: boolean;
-    createdAt: Date
+    createdAt: Date;
+    personal_projects_id: string
 }

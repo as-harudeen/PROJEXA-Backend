@@ -8,30 +8,30 @@ interface UserBasicInfoInterface {
 }
 
 interface ResponseDataInterface {
+  user_id: string;
   team_id: string;
   team_name: string;
   team_desc: string;
   team_dp: string;
   team_lead: UserBasicInfoInterface;
+  team_admins_id: string[];
+  team_members_id: string[];
   team_admins: UserBasicInfoInterface[];
   team_members: UserBasicInfoInterface[];
-  invitations: { team_invitee_id: string }[];
+  invitations: { team_invitee_id: string; team_invitation_id: string }[];
 }
 
 export class TransformTeamDetailsInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler) {
+  intercept(_: ExecutionContext, next: CallHandler) {
     return next.handle().pipe(
       map((data: ResponseDataInterface) => {
-
-        const { invitations, ...restData } = data;
+        const { user_id, team_admins_id, team_members_id, ...restData } = data;
 
         return {
           ...restData,
-          all_team_member_ids: [
-            ...data.team_admins.map((admin) => admin.user_id),
-            ...data.team_members.map((member) => member.user_id),
-          ],
-          team_invitee_ids: invitations.map(invitee => invitee.team_invitee_id)
+          all_team_member_ids: [...team_admins_id, ...team_members_id],
+          isCurrentUserAdmin: team_admins_id.includes(user_id),
+          isCureentUserLeader: restData.team_lead.user_id === user_id,
         };
       }),
     );

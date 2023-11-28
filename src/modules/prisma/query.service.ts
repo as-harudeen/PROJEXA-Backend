@@ -22,11 +22,10 @@ export class QueryService {
    * @param f - OPTIONAL - the filter
    * @returns  database query.
    */
-  getPersonalProjectsQuery(user_id: string, s: string, f: ProjectStatus[]) {
+  getPersonalProjectsQuery(owner_id: string, s: string, f: ProjectStatus[]) {
     const query: GetProjectsQueryInterface = {
       where: {
-        user_id,
-        project_type: 'personal',
+        owner_id,
       },
     };
 

@@ -107,18 +107,20 @@ export class PersonalProjectService {
   }
 
   async editProject(
-    owner_id: string,
-    project_id: string,
-    updateProjectDto: UpdateProjectDto,
+    {
+      user_id: owner_id,
+      project_id,
+      updated_project_details
+    }: UpdateProjectDto
   ) {
     try {
-      if (updateProjectDto.project_start_date)
-        updateProjectDto.project_start_date = new Date(
-          updateProjectDto.project_start_date,
+      if (updated_project_details.project_start_date)
+        updated_project_details.project_start_date = new Date(
+          updated_project_details.project_start_date,
         );
-      if (updateProjectDto.project_end_date)
-        updateProjectDto.project_end_date = new Date(
-          updateProjectDto.project_end_date,
+      if (updated_project_details.project_end_date)
+        updated_project_details.project_end_date = new Date(
+          updated_project_details.project_end_date,
         );
 
       await this.prisma.personalProject.update({
@@ -126,7 +128,7 @@ export class PersonalProjectService {
           personal_project_id: project_id,
           owner_id,
         },
-        data: updateProjectDto,
+        data: updated_project_details,
       });
       return 'Updated successfully';
     } catch (err) {
