@@ -1,16 +1,22 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { OtpService } from '../otp/otp.service';
 import { UserPayloadInterface } from './interface';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly otpService: OtpService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -76,11 +82,11 @@ export class AuthService {
     return this.otpService.generateAndMailOTP(user_email, `${user_email}-OTP`);
   }
 
-  async generate2AFToken(
-    res: Response,
-    payload : UserPayloadInterface,
-  ) {
-    await this.otpService.generateAndMailOTP(payload.user_email, `${payload.user_id}-2F-OTP`);
+  async generate2AFToken(res: Response, payload: UserPayloadInterface) {
+    await this.otpService.generateAndMailOTP(
+      payload.user_email,
+      `${payload.user_id}-2F-OTP`,
+    );
     res.cookie(
       'two-AF-Token',
       await this.generateToken(payload, process.env.TWO_AF_TOKEN_SECRET),
@@ -93,7 +99,7 @@ export class AuthService {
    * Generate token and store in cookie.
    * @param res - Response object for set cookie
    * @param user - email and user_id for payload.
-   * @returns String
+   * @returns {string}
    */
   async login(res: Response, payload: UserPayloadInterface) {
     res.cookie('access_token', await this.generateToken(payload));
@@ -109,7 +115,7 @@ export class AuthService {
    * @param res - Response object to set access_token
    * in cookie
    * @param otp - otp for validate.
-   * @returns String
+   * @returns {string}
    */
   async validate2AFOTP(
     res: Response,
@@ -119,6 +125,50 @@ export class AuthService {
     await this.otpService.validateOTP(otp, `${user_id}-2F-OTP`);
     const payload = { user_id, user_email };
     res.cookie('access_token', await this.generateToken(payload));
+    console.log('varified successfully');
     return 'Login successfully';
+  }
+
+  async getUserPayloadFromToken(token: string) {
+    return this.jwtService.verifyAsync(token, { secret: process.env.SECRET });
+  }
+
+  async checkUserExistenceInTeam({
+    user_id,
+    team_id,
+  }: {
+    user_id: string;
+    team_id: string;
+  }) {
+    try {
+      
+      await this.prisma.team.findUniqueOrThrow({
+        where: {
+          team_id,
+          OR: [
+            {
+              team_admins_id: { has: user_id },
+            },
+            {
+              team_members_id: { has: user_id },
+            },
+          ],
+        },
+      });
+      
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          user_id,
+        },
+        select: {
+          user_name: true,
+          user_full_name: true,
+          user_profile: true
+        },
+      });
+      return user;
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
