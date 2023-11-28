@@ -30,6 +30,7 @@ export class MailService {
   async sendOTP(to: string) {
     const OTP = generateOTP(6);
     const text = `Your OTP is ${OTP}`;
+    console.log(OTP, "OTP");
     const subject = 'One-Time-Password';
     await this.sendMail({ to, subject, text });
     return OTP;

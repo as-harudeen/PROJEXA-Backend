@@ -19,7 +19,10 @@ import { PersonalProjectService } from './personal-project.service';
 import { UserPayloadInterface } from 'src/modules/auth/interface';
 import { GetProjectQueryPipe } from './pipe/get-project.pipe';
 import { QueryService } from '../../../prisma/query.service';
-import { UpdateProjectDto } from '../dto/update-project.dto';
+import {
+  UpdateProjectDto,
+  UpdatedProjectDetails,
+} from '../dto/update-project.dto';
 import { ProjectStatus } from '@prisma/client';
 
 @Controller('/project/personal')
@@ -84,14 +87,14 @@ export class PersonalProjectController {
     @Req() req: Request,
     @Param('project_id') project_id: string,
     @Body(new ZodValidationPipe(updateProjectSchema))
-    updateProjectDto: UpdateProjectDto,
+    updated_project_details: UpdatedProjectDetails,
   ) {
     const { user_id } = req.user as UserPayloadInterface;
-    return await this.PersonalProjectService.editProject(
+    return await this.PersonalProjectService.editProject({
+      updated_project_details,
       user_id,
       project_id,
-      updateProjectDto,
-    );
+    });
   }
 
   @Patch(':project_id/status')

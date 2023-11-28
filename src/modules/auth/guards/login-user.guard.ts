@@ -15,6 +15,8 @@ export class LoginUserGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
     const { user_email, password } = request.body as LoginUerDto;
+    console.log(user_email, password);
+    console.log('hello fron login user guard');
     if (!user_email || !password)
       throw new BadRequestException('Email and password are mandatory');
 
@@ -25,9 +27,11 @@ export class LoginUserGuard implements CanActivate {
       if (user == null || !(await bcrypt.compare(password, user.password)))
         throw new Error('Incorrect email or password');
 
+        console.log(user);
       request.user = user;
       return true;
     } catch (err) {
+      console.log(err);
       throw new BadRequestException(err.message);
     }
   }

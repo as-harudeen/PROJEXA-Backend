@@ -1,4 +1,4 @@
-import { ProjectStatus, ProjectType } from "@prisma/client"
+import { ProjectStatus } from "@prisma/client"
 
 
 /**
@@ -6,8 +6,7 @@ import { ProjectStatus, ProjectType } from "@prisma/client"
  */
 export interface GetProjectsQueryInterface {
     where: {
-        user_id: string,
-        project_type: keyof typeof ProjectType,
+        owner_id: string,
         project_name?: {
             contains: string
         },

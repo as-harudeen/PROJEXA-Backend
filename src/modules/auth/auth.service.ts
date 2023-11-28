@@ -126,7 +126,7 @@ export class AuthService {
     const payload = { user_id, user_email };
     res.cookie('access_token', await this.generateToken(payload));
     console.log('varified successfully');
-    return 'Login successfully';
+    return {user_email, user_id};
   }
 
   async getUserPayloadFromToken(token: string) {

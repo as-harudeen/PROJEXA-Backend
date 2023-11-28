@@ -10,40 +10,148 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//  __________________________________________
+
+//  ===========>  User Collection <===========
+//  __________________________________________
+
+enum UserGender {
+  male
+  female
+  other
+}
+
 model User {
-  user_id            String  @id @default(auto()) @map("_id") @db.ObjectId
-  user_name          String  @unique
-  user_email         String  @unique
+  user_id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  // User Details
+  user_name          String      @unique
+  user_full_name     String
+  user_email         String      @unique
   password           String
   user_profile       String?
-  bio                String?
-  projects Project[]
-  is_blocked         Boolean @default(false)
-  two_factor_enabled Boolean @default(false)
-  createdAt DateTime @default(now())
-  stages Stage[]
+  summary            String?
+  gender             UserGender?
+  birthday           DateTime?
+  is_blocked         Boolean     @default(false)
+  two_factor_enabled Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+
+  // Relation with project
+  personal_projects        PersonalProject[]
+  personal_projects_stages PersonalProjectStage[]
+  team_projects_lead       TeamProjectCollection[]
+
+  // Connections
+  followedByIDs String[] @db.ObjectId
+  followedBy    User[]   @relation("UserFollows", fields: [followedByIDs], references: [user_id])
+  followingIDs  String[] @db.ObjectId
+  following     User[]   @relation("UserFollows", fields: [followingIDs], references: [user_id])
+
+  // Relation with Team
+  admin_team            Team[]                   @relation(name: "team_admin", fields: [admin_team_ids], references: [team_id])
+  admin_team_ids        String[]                 @db.ObjectId
+  team_lead             Team[]                   @relation("team_lead")
+  member_team           Team[]                   @relation("team_member", fields: [member_team_id], references: [team_id])
+  member_team_id        String[]                 @db.ObjectId
+  team_task_assigned_by TeamProjectTask[]        @relation("assigned_by")
+  team_task_assigned_to TeamProjectTask[]        @relation("assigned_to")
+  team_task_comments    TeamProjectTaskComment[]
+
+  // Relation with TeamInvitation
+  sended_team_invitations   TeamInvitation[] @relation("team_invitee")
+  recieved_team_invitations TeamInvitation[] @relation("team_inviter")
+
+  // Team chat
+  team_chats            TeamChat[]
+  initiated_video_calls TeamVideoCall[] @relation("initiated_video_call")
+}
+
+//  __________________________________________
+
+//  ==============>  TeamSchema <=============
+//  __________________________________________
+
+model Team {
+  team_id                 String                  @id @default(auto()) @map("_id") @db.ObjectId
+  team_name               String
+  team_desc               String
+  team_dp                 String
+  team_admins_id          String[]                @db.ObjectId
+  team_admins             User[]                  @relation(name: "team_admin", fields: [team_admins_id], references: [user_id])
+  team_lead_id            String                  @db.ObjectId
+  team_lead               User                    @relation(name: "team_lead", fields: [team_lead_id], references: [user_id])
+  team_members_id         String[]                @db.ObjectId
+  team_members            User[]                  @relation(name: "team_member", fields: [team_members_id], references: [user_id])
+  invitations             TeamInvitation[]
+  team_activity_logs      TeamActivity?
+  team_projects           TeamProjectCollection?
+  task_distribution_board TaskDistributionBoard[]
+
+  team_chats       TeamChat[]
+  team_video_calls TeamVideoCall[]
+}
+
+//  __________________________________________
+
+//  ======  TeamInvitation Collection ========
+//  __________________________________________
+
+enum InvitationStatus {
+  pending
+  cancel
+  accepted
+  rejected
+}
+
+model TeamInvitation {
+  team_invitation_id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  team_inviter                User             @relation(name: "team_inviter", fields: [team_inviter_id], references: [user_id])
+  team_inviter_id             String           @db.ObjectId
+  team_invitee                User             @relation(name: "team_invitee", fields: [team_invitee_id], references: [user_id])
+  team_invitee_id             String           @db.ObjectId
+  team                        Team             @relation(fields: [team_id], references: [team_id])
+  team_id                     String           @db.ObjectId
+  status                      InvitationStatus @default(pending)
+  invited_at                  DateTime         @default(now())
+  team_invitation_expiry_date DateTime
+  team_activity_id            String           @db.ObjectId
+  team_activity               TeamActivity     @relation(fields: [team_activity_id], references: [team_activity_id])
+}
+
+//  __________________________________________
+
+//  =======  TeamActivity Collection =========
+//  __________________________________________
+
+model TeamActivity {
+  team_activity_id   String            @id @default(auto()) @map("_id") @db.ObjectId
+  team_id            String            @unique @db.ObjectId
+  team               Team              @relation(fields: [team_id], references: [team_id])
+  team_activity_logs TeamActivityLog[]
+  team_invitations   TeamInvitation[]
+}
+
+//  __________________________________________
+
+//  ======  TeamActivityLog Collection ========
+//  __________________________________________
+model TeamActivityLog {
+  team_activity_log_id String       @id @default(auto()) @map("_id") @db.ObjectId
+  log_text             String
+  logged_at            DateTime     @default(now())
+  team_activity_id     String       @db.ObjectId
+  team_activity        TeamActivity @relation(fields: [team_activity_id], references: [team_activity_id])
 }
 
 type ProjectReference {
   title String
-  link String
+  link  String
 }
 
-enum ProjectType {
-  personal
-  team
-  company
-}
+//  __________________________________________
 
-enum TaskStatus {
-  todo
-  doing
-  analysis
-  code_review
-  testing
-  done
-  released
-}
+//  ======  Personal Project Collection ======
+//  __________________________________________
 
 enum ProjectStatus {
   pending
@@ -51,38 +159,155 @@ enum ProjectStatus {
   completed
 }
 
-model Project {
-  project_id  String @id @default(auto()) @map("_id") @db.ObjectId
-  project_name String
-  project_desc  String
-  project_start_date DateTime
-  project_end_date DateTime
-  user User @relation(fields: [user_id], references: [user_id])
-  user_id String @db.ObjectId
-  project_reference ProjectReference[]
-  project_type ProjectType
-  project_status ProjectStatus @default(pending)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  stages Stage[]
+model PersonalProject {
+  personal_project_id     String                 @id @default(auto()) @map("_id") @db.ObjectId
+  project_name            String
+  project_desc            String
+  project_start_date      DateTime
+  project_end_date        DateTime
+  project_reference       ProjectReference[]
+  project_status          ProjectStatus          @default(pending)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  personal_project_stages PersonalProjectStage[]
+  owner_id                String                 @db.ObjectId
+  owner                   User                   @relation(fields: [owner_id], references: [user_id])
 }
 
+//  __________________________________________
 
-model Stage {
-  stage_id String @id @default(auto()) @map("_id") @db.ObjectId
+//  ==========  Personal Project Stage ========
+//  __________________________________________
+model PersonalProjectStage {
+  stage_id    String                @id @default(auto()) @map("_id") @db.ObjectId
   stage_title String
-  project Project @relation(fields: [project_id], references: [project_id])
-  project_id String @db.ObjectId
-  tasks Task[]
-  user User @relation(fields: [owner], references: [user_id])
-  owner String @db.ObjectId
+  project     PersonalProject       @relation(fields: [project_id], references: [personal_project_id])
+  project_id  String                @db.ObjectId
+  tasks       PersonalProjectTask[]
+  user        User                  @relation(fields: [owner], references: [user_id])
+  owner       String                @db.ObjectId
 }
 
-model Task {
-  task_id String @id @default(auto()) @map("_id") @db.ObjectId
-  task_title String
-  task_desc String @default("")
-  stage Stage @relation(fields: [stage_id], references: [stage_id])
-  stage_id String @db.ObjectId
-  position Int @unique
+//  __________________________________________
+
+//  ========  Personal Project Task  ==========
+//  __________________________________________
+model PersonalProjectTask {
+  task_id       String               @id @default(auto()) @map("_id") @db.ObjectId
+  task_title    String
+  task_desc     String               @default("")
+  stage         PersonalProjectStage @relation(fields: [stage_id], references: [stage_id])
+  stage_id      String               @db.ObjectId
+  position      Int                  @unique
+  task_priority Int
+}
+
+//  __________________________________________
+
+//  =======  TeamProjects Collection =========
+//  __________________________________________
+model TeamProjectCollection {
+  team_projects_id String                  @id @default(auto()) @map("_id") @db.ObjectId
+  team_id          String                  @unique @db.ObjectId
+  team_lead_id     String                  @db.ObjectId
+  team_lead        User                    @relation(fields: [team_lead_id], references: [user_id])
+  team             Team                    @relation(fields: [team_id], references: [team_id])
+  team_projects    TeamIndividualProject[]
+}
+
+model TeamIndividualProject {
+  team_project_id    String             @id @default(auto()) @map("_id") @db.ObjectId
+  project_name       String
+  project_desc       String
+  project_start_date DateTime
+  project_end_date   DateTime
+  project_reference  ProjectReference[]
+  project_status     ProjectStatus      @default(pending)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  team_project_tasks TeamProjectTask[]
+
+  team_projects_id        String                 @db.ObjectId
+  team_projects           TeamProjectCollection  @relation(fields: [team_projects_id], references: [team_projects_id])
+  task_distribution_board TaskDistributionBoard?
+}
+
+enum TeamTaskStatus {
+  todo
+  doing
+  done
+}
+
+model TeamProjectTask {
+  task_id                          String                      @id @default(auto()) @map("_id") @db.ObjectId
+  assigned_at                      DateTime?
+  assigned_by                      User?                       @relation(name: "assigned_by", fields: [assigned_by_user_id], references: [user_id])
+  assigned_by_user_id              String?                     @db.ObjectId
+  assigned_to                      User?                       @relation(name: "assigned_to", fields: [assigned_to_user_id], references: [user_id])
+  assigned_to_user_id              String?                     @db.ObjectId
+  task_status                      TeamTaskStatus              @default(todo)
+  task_title                       String
+  task_desc                        String                      @default("")
+  task_priority                    Int
+  task_time_cap                    Int
+  team_project_id                  String                      @db.ObjectId
+  team_project                     TeamIndividualProject       @relation(fields: [team_project_id], references: [team_project_id])
+  task_distribution_board_stage_id String?                     @db.ObjectId
+  task_distribution_board_stage    TaskDistributionBoardStage? @relation(fields: [task_distribution_board_stage_id], references: [task_distribution_board_stage_id])
+  task_comments                    TeamProjectTaskComment[]
+}
+
+model TeamProjectTaskComment {
+  task_comment_id   String          @id @default(auto()) @map("_id") @db.ObjectId
+  task_comment_text String
+  commented_by_id   String          @db.ObjectId
+  commented_by      User            @relation(fields: [commented_by_id], references: [user_id])
+  commented_at      DateTime        @default(now())
+  task_id           String          @db.ObjectId
+  task              TeamProjectTask @relation(fields: [task_id], references: [task_id])
+}
+
+model TaskDistributionBoard {
+  board_id                 String                       @id @default(auto()) @map("_id") @db.ObjectId
+  team                     Team                         @relation(fields: [team_id], references: [team_id])
+  team_id                  String                       @db.ObjectId
+  project_id               String                       @unique @db.ObjectId
+  team_project             TeamIndividualProject        @relation(fields: [project_id], references: [team_project_id])
+  task_distribution_stages TaskDistributionBoardStage[]
+}
+
+model TaskDistributionBoardStage {
+  task_distribution_board_stage_id    String                @id @default(auto()) @map("_id") @db.ObjectId
+  task_distribution_board_stage_title String
+  task_distribution_board_id          String                @db.ObjectId
+  task_distribution_board             TaskDistributionBoard @relation(fields: [task_distribution_board_id], references: [board_id])
+  tasks                               TeamProjectTask[]
+}
+
+// ------ TEAM CHAT -------
+
+model TeamChat {
+  team_chat_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  team_id      String   @db.ObjectId
+  team         Team     @relation(fields: [team_id], references: [team_id])
+  chat_text    String
+  chatter_id   String   @db.ObjectId
+  chatter      User     @relation(fields: [chatter_id], references: [user_id])
+  sended_at    DateTime @default(now())
+}
+
+enum TeamVideoCallStatus {
+  onGoing
+  ended
+}
+
+model TeamVideoCall {
+  team_video_call_id String              @id @default(auto()) @map("_id") @db.ObjectId
+  team_id            String              @db.ObjectId
+  team               Team                @relation(fields: [team_id], references: [team_id])
+  joined_users_id    String[]            @db.ObjectId
+  initiated_by_id    String              @db.ObjectId
+  initiated_by       User                @relation("initiated_video_call", fields: [initiated_by_id], references: [user_id])
+  initiated_at       DateTime            @default(now())
+  status             TeamVideoCallStatus @default(onGoing)
 }
