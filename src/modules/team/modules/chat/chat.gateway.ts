@@ -13,7 +13,7 @@ import { ChatService } from './chat.service';
 import { AuthService } from 'src/modules/auth/auth.service';
 
 @WebSocketGateway(8000, {
-  cors: { origin: 'http://localhost:5173', credentials: true },
+  cors: { origin: 'http://localhost:3000', credentials: true },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
