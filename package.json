@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -29,6 +29,7 @@
     "@nestjs/passport": "^10.0.2",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.2.8",
+    "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.1.13",
     "@nestjs/websockets": "^10.2.8",
     "@prisma/client": "^5.5.0",
