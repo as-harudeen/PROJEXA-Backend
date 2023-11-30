@@ -33,10 +33,11 @@ export class AuthController {
   @UseGuards(IsExistGuard)
   @UsePipes(new ZodValidationPipe(registerUserSchema))
   async generateRegisterOTP(
-    @Res({ passthrough: true }) response: Response,
+    // @Res({ passthrough: true }) response: Response,
     @Body() registerUserDto: RegisterUserDto,
   ) {
-    return this.authService.generateRegisterOTP(response, registerUserDto);
+    // return this.authService.generateRegisterOTP(response, registerUserDto);
+    return this.userService.register(registerUserDto);
   }
 
   @Post('/validate/register-otp')
