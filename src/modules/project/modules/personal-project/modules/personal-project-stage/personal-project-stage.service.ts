@@ -76,23 +76,25 @@ export class PersonalProjectStageService {
 
   async deleteStage({ stage_id, user_id }: DeleteStageDto) {
     try {
-      const { stage_id: stageId } =
-        await this.prisma.personalProjectStage.delete({
-          where: {
-            user: { user_id },
-            stage_id,
-          },
-          select: { stage_id: true },
-        });
-
       await this.prisma.personalProjectTask.deleteMany({
         where: {
-          stage_id: stageId,
+          stage_id,
+          stage: {
+            user: { user_id },
+          },
+        },
+      });
+
+      await this.prisma.personalProjectStage.delete({
+        where: {
+          user: { user_id },
+          stage_id,
         },
       });
 
       return 'Stage deleted successfully';
     } catch (err) {
+      console.log(err);
       throw new InternalServerErrorException(err.message);
     }
   }

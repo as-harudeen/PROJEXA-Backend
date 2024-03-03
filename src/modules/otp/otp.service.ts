@@ -35,6 +35,7 @@ export class OtpService {
    */
   async validateOTP (otp: string, key: string) {
     const OTP = await this.redisService.getItem(key);
+    console.log(OTP);
     if(!OTP) throw new BadRequestException("OTP Expired");
     if(OTP !== otp) throw new BadRequestException("Invalid OTP");
   }

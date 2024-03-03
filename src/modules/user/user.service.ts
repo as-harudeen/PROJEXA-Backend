@@ -7,7 +7,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EdituserDto } from './dto/edit-user.dto';
 import { RegisterUserDto } from '../auth/dto/register-user.dto';
 import { GetAllUsersDto } from './dto/get-all-users.dto';
-import * as bcrypt from 'bcrypt';
 
 
 @Injectable()
@@ -28,13 +27,12 @@ export class UserService {
     password,
   }: RegisterUserDto) {
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
       await this.prisma.user.create({
         data: {
           user_name,
           user_email,
           user_full_name,
-          password: hashedPassword,
+          password,
         },
       });
       return 'User registered successfully';

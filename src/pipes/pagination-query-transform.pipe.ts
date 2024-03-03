@@ -15,12 +15,13 @@ export class PaginationQueryTransformPipe implements PipeTransform {
 
 
   transform({ p: pageNum, l: limit, s }: PaginationQueryInterface) {
-    return {
+    const updatedQuery = {
       p: isNaN(+pageNum) ? 1 : +pageNum,
       l: isNaN(+limit)
         ? this.maxLimit
         : Math.min(this.maxLimit, +limit),
       s: s || '',
     };
+    return updatedQuery;
   }
 }

@@ -141,8 +141,11 @@ export class AuthService {
     team_id: string;
   }) {
     try {
+
+      this.prisma
       
       await this.prisma.team.findUniqueOrThrow({
+        
         where: {
           team_id,
           OR: [

@@ -13,11 +13,11 @@ import { RedisService } from './redis.service';
             host: 'localhost',
             port: 6379,
           },
-          // ttl: 60
+          ttl: 60,
         }),
     }),
   ],
   providers: [RedisService],
-  exports: [RedisService]
+  exports: [RedisService],
 })
 export class RedisModule {}
